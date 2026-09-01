@@ -1,0 +1,216 @@
+/* ============================================================================
+ * base.css
+ * ----------------------------------------------------------------------------
+ * La base de todo el diseño:
+ *   1. Tokens  -> las variables de color, tipografía y espaciado. Si querés
+ *                 cambiar "el look" de la app, casi siempre se toca acá.
+ *   2. Tema claro / oscuro.
+ *   3. Reset   -> emparejar el comportamiento por defecto de los navegadores.
+ *   4. Tipografía base y elementos sueltos (body, links, etc.).
+ *
+ * Orden de carga de los CSS (ver index.html):
+ *   base.css  ->  componentes.css  ->  layout.css
+ * ==========================================================================*/
+
+/* ==========================================================================
+ * 1. TOKENS (tema claro, es el que vale por defecto)
+ * ========================================================================*/
+:root {
+  /* --- Colores (tema claro) ---
+     Paleta fría lavanda/índigo: en vez del beige, las superficies tienen un
+     tinte suave del color de la app, así la página tiene algo de color sin
+     ser estridente. */
+  --papel:        #FCFCFE;   /* fondo general, casi blanco apenas frío */
+  --papel-2:      #F0F1FA;   /* superficie hundida (formularios, tarjetas) — lavanda suave */
+  --papel-3:      #E3E4F2;   /* bordes de tarjetas */
+  --tinta:        #1A1A24;   /* texto principal, casi negro apenas violáceo */
+  --grafito:      #66667A;   /* texto secundario, ayudas, fechas */
+  --linea:        #E7E8F2;   /* divisores y bordes finos */
+
+  --acento:       #4F46E5;   /* EL color de la app: índigo moderno */
+  --acento-tinta: #FFFFFF;   /* texto arriba del acento */
+  --acento-tenue: #EBEAFC;   /* fondo suave con el tono del acento */
+
+  --atencion:      #B45309;  /* ámbar: solo para "esta cuota termina acá" */
+  --atencion-tenue:#FBEEDC;  /* fondo suave del ámbar */
+  --ok:           #2F7D5B;   /* verde esmeralda: confirmaciones, "te queda" */
+  --peligro:      #C13030;   /* borrar / errores */
+  --peligro-tenue:#FAEAEA;
+
+  /* --- Tipografías --- */
+  --fuente-titulo: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
+  --fuente-texto:  "Hanken Grotesk", system-ui, "Segoe UI", Roboto, sans-serif;
+  --fuente-mono:   "IBM Plex Mono", "Consolas", ui-monospace, monospace;
+
+  /* --- Escala de tamaños de texto --- */
+  --txt-xs:  0.75rem;   /* 12px  ayudas, etiquetas de cuota */
+  --txt-sm:  0.875rem;  /* 14px  texto secundario */
+  --txt-md:  1rem;      /* 16px  texto base */
+  --txt-lg:  1.25rem;   /* 20px  subtítulos */
+  /* Los dos más grandes usan clamp() para achicarse solos en pantallas
+     angostas y que un monto largo ("$ 1.500.000") no desborde la tarjeta. */
+  --txt-xl:  clamp(1.4rem, 5.5vw, 1.75rem);   /* ~22–28px */
+  --txt-2xl: clamp(1.6rem, 7vw, 2.25rem);     /* ~26–36px  la cifra de "Este mes" */
+
+  /* --- Espaciado (múltiplos de 4px) --- */
+  --esp-1: 4px;
+  --esp-2: 8px;
+  --esp-3: 12px;
+  --esp-4: 16px;
+  --esp-5: 24px;
+  --esp-6: 32px;
+  --esp-7: 48px;
+
+  /* --- Bordes redondeados --- */
+  --radio-sm: 6px;
+  --radio-md: 10px;
+  --radio-lg: 16px;
+
+  /* --- Sombra (muy sutil, "papel apoyado") --- */
+  --sombra: 0 1px 2px rgba(26, 26, 48, 0.05), 0 6px 20px rgba(26, 26, 48, 0.07);
+
+  /* --- Ancho de la columna de contenido --- */
+  --ancho-columna: 600px;
+
+  color-scheme: light;
+}
+
+/* ==========================================================================
+ * 2. TEMA OSCURO
+ * Se activa de dos formas:
+ *   - Automático: el sistema operativo está en modo oscuro
+ *     (@media prefers-color-scheme) y la persona NO forzó "claro".
+ *   - Manual: se pone data-theme="dark" en <html> desde Ajustes.
+ * Definimos SOLO los colores que cambian; lo demás se hereda de :root.
+ * ========================================================================*/
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --papel:        #141317;
+    --papel-2:      #1D1C21;
+    --papel-3:      #2A2830;
+    --tinta:        #EDEAE2;
+    --grafito:      #98938A;
+    --linea:        #2E2C33;
+
+    --acento:       #8B97FF;
+    --acento-tinta: #16151A;
+    --acento-tenue: #2A2B46;
+
+    --atencion:      #E08A4E;
+    --atencion-tenue:#33261C;
+    --ok:           #5FBB8C;
+    --peligro:      #E5776B;
+    --peligro-tenue:#33211F;
+
+    --sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+
+/* Tema oscuro forzado desde Ajustes (gana siempre, esté como esté el sistema). */
+:root[data-theme="dark"] {
+  --papel:        #141317;
+  --papel-2:      #1D1C21;
+  --papel-3:      #2A2830;
+  --tinta:        #EDEAE2;
+  --grafito:      #98938A;
+  --linea:        #2E2C33;
+
+  --acento:       #8B97FF;
+  --acento-tinta: #16151A;
+  --acento-tenue: #2A2B46;
+
+  --atencion:      #E08A4E;
+  --atencion-tenue:#33261C;
+  --ok:           #5FBB8C;
+  --peligro:      #E5776B;
+  --peligro-tenue:#33211F;
+
+  --sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+/* ==========================================================================
+ * 3. RESET
+ * ========================================================================*/
+*,
+*::before,
+*::after {
+  box-sizing: border-box;   /* el padding no agranda los elementos */
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;  /* que el celular no reescale el texto solo */
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;    /* que los formularios usen la misma fuente que el resto */
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* Ocultar de verdad lo que tenga el atributo hidden (algunos navegadores lo
+   pisan cuando además hay display:flex). */
+[hidden] {
+  display: none !important;
+}
+
+/* ==========================================================================
+ * 4. TIPOGRAFÍA Y ELEMENTOS BASE
+ * ========================================================================*/
+body {
+  font-family: var(--fuente-texto);
+  font-size: var(--txt-md);
+  line-height: 1.5;
+  color: var(--tinta);
+  background: var(--papel);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--fuente-titulo);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+/* Clase utilitaria: cualquier número de plata lleva esta pinta.
+   "font-variant-numeric: tabular-nums" hace que todos los dígitos ocupen lo
+   mismo, así las columnas de montos quedan alineadas prolijas. */
+.monto {
+  font-family: var(--fuente-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Foco visible y consistente para quien navega con teclado. */
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+  border-radius: var(--radio-sm);
+}
+
+/* Respetar a quien pidió menos animaciones en su sistema. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

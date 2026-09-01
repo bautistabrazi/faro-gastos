@@ -1,0 +1,203 @@
+/* ============================================================================
+ * layout.css
+ * ----------------------------------------------------------------------------
+ * La ESTRUCTURA de la página (dónde va cada bloque grande), sin entrar en el
+ * detalle de los componentes:
+ *   - .app          -> el contenedor de todo
+ *   - .cabecera     -> marca + navegación (arriba en compu, abajo en celular)
+ *   - .contenido    -> la columna central donde se dibuja la pantalla activa
+ *   - responsive    -> los ajustes para pantallas chicas
+ * ==========================================================================*/
+
+.app {
+  min-height: 100vh;
+  min-height: 100dvh;          /* "dvh" = alto real en el celular con la barra del navegador */
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+ * CABECERA (marca + navegación)
+ * En compu: barra horizontal arriba, pegada (sticky) al hacer scroll.
+ * ========================================================================*/
+.cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--papel); /* respaldo por si el navegador no soporta color-mix */
+  background: color-mix(in srgb, var(--papel) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--linea);
+}
+
+.cabecera__interior {
+  max-width: var(--ancho-columna);
+  margin: 0 auto;
+  padding: var(--esp-3) var(--esp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+}
+
+/* "Faro" en la fuente de títulos + "Control de gastos" chiquito al lado. */
+.cabecera__marca {
+  font-family: var(--fuente-titulo);
+  font-weight: 700;
+  font-size: var(--txt-lg);
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: baseline;
+  gap: var(--esp-2);
+}
+
+.cabecera__sub {
+  font-family: var(--fuente-texto);
+  font-weight: 500;
+  font-size: var(--txt-xs);
+  letter-spacing: 0.02em;
+  color: var(--grafito);
+  text-transform: uppercase;
+}
+
+/* zona derecha: navegación + botón de tema */
+.cabecera__acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+}
+
+/* mientras se pide iniciar sesión, no mostramos la navegación */
+body.sin-sesion .cabecera__acciones { display: none; }
+
+/* botón rápido de tema (el sol / luna de la cabecera) */
+.tema-toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--grafito);
+  border: 1px solid var(--linea);
+  background: var(--papel-2);
+  transition: color 0.15s, background-color 0.15s;
+  flex-shrink: 0;
+}
+.tema-toggle:hover { color: var(--tinta); background: var(--papel-3); }
+
+/* ==========================================================================
+ * NAVEGACIÓN
+ * ========================================================================*/
+.nav {
+  display: flex;
+  gap: var(--esp-1);
+}
+
+.nav__item {
+  font-family: var(--fuente-texto);
+  font-size: var(--txt-sm);
+  font-weight: 500;
+  color: var(--grafito);
+  padding: var(--esp-2) var(--esp-3);
+  border-radius: var(--radio-sm);
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.nav__item:hover {
+  color: var(--tinta);
+  background: var(--papel-2);
+}
+
+/* pestaña activa */
+.nav__item--activo {
+  color: var(--acento);
+  background: var(--acento-tenue);
+}
+
+/* ==========================================================================
+ * CONTENIDO (la columna central)
+ * ========================================================================*/
+.contenido {
+  flex: 1;
+  width: 100%;
+  max-width: var(--ancho-columna);
+  margin: 0 auto;              /* <- esto centra la columna: el bug que tenía la app vieja */
+  padding: var(--esp-6) var(--esp-4) var(--esp-7);
+}
+
+/* Cada "pantalla" (Gastos, Proyección, Ajustes) se monta dentro de .contenido.
+   Este bloque le da el aire de arriba a su encabezado. */
+.pantalla__titulo {
+  font-size: var(--txt-xl);
+  margin-bottom: var(--esp-2);
+}
+
+.pantalla__bajada {
+  color: var(--grafito);
+  font-size: var(--txt-sm);
+  margin-bottom: var(--esp-5);
+  max-width: 46ch;
+}
+
+/* ==========================================================================
+ * RESPONSIVE — pantallas chicas (celular)
+ * La navegación pasa a ser una barra fija ABAJO, al alcance del pulgar,
+ * como en una app nativa. Es la forma en la que va a vivir cuando la
+ * llevemos al celular.
+ * ========================================================================*/
+@media (max-width: 620px) {
+  .cabecera {
+    position: static;
+    background: var(--papel);
+    backdrop-filter: none;
+  }
+
+  .cabecera__interior {
+    padding: var(--esp-4) var(--esp-4) var(--esp-3);
+  }
+
+  /* saco la nav de la cabecera y la fijo abajo */
+  .nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    background: var(--papel); /* respaldo si no hay color-mix */
+    background: color-mix(in srgb, var(--papel) 94%, transparent);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--linea);
+    padding: var(--esp-2) var(--esp-2) max(var(--esp-2), env(safe-area-inset-bottom));
+    justify-content: space-around;
+    gap: 0;
+  }
+
+  .nav__item {
+    flex: 1;
+    text-align: center;
+    padding: var(--esp-3) var(--esp-2);
+    border-radius: var(--radio-sm);
+  }
+
+  /* dejo aire al final para que la barra fija no tape el último contenido */
+  .contenido {
+    padding: var(--esp-5) var(--esp-4) calc(var(--esp-7) + 56px);
+  }
+
+  .pantalla__titulo { font-size: var(--txt-lg); }
+}
+
+/* Celulares angostos: apretamos un poco más para que nada se corte. */
+@media (max-width: 380px) {
+  .cabecera__sub { display: none; }          /* dejamos solo "Faro" */
+
+  .nav__item {
+    font-size: var(--txt-xs);
+    padding: var(--esp-2) 2px;
+  }
+
+  .contenido {
+    padding-left: var(--esp-3);
+    padding-right: var(--esp-3);
+  }
+}

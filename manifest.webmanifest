@@ -1,0 +1,20 @@
+{
+  "name": "Faro · Control de gastos",
+  "short_name": "Faro",
+  "description": "Control de gastos: consumos, cuotas y gastos fijos, con proyección mes a mes.",
+  "lang": "es-AR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FCFCFE",
+  "theme_color": "#FCFCFE",
+  "icons": [
+    {
+      "src": "assets/icono.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

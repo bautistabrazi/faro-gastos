@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Faro · Control de gastos. Registro de consumos, cuotas y gastos fijos, con proyección mes a mes." />
+  <meta name="theme-color" content="#FCFCFE" />
+  <link rel="icon" href="assets/icono.svg" type="image/svg+xml" />
+  <title>Faro · Control de gastos</title>
+
+  <!-- Semilla para el futuro pasaje a app / instalación en el celular. -->
+  <link rel="manifest" href="manifest.webmanifest" />
+
+  <!--
+    Script CHIQUITO que corre ANTES de pintar la página: lee el tema elegido
+    ("claro" / "oscuro" / "auto") y lo aplica en <html>. Va acá, inline, para
+    que no haya un "parpadeo" de color al abrir la app.
+  -->
+  <script>
+    (function () {
+      try {
+        var elegido = localStorage.getItem("gastos-tema"); // puede ser null
+        if (elegido === "claro") document.documentElement.setAttribute("data-theme", "light");
+        else if (elegido === "oscuro") document.documentElement.setAttribute("data-theme", "dark");
+        // si es "auto" o null: no ponemos nada y manda el sistema operativo
+      } catch (e) { /* localStorage bloqueado: seguimos con el tema del sistema */ }
+    })();
+  </script>
+
+  <!-- Tipografías (Google Fonts). Si no hay internet, se usan las de respaldo
+       definidas en base.css y la app funciona igual. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Estilos propios. ORDEN IMPORTA: base -> componentes -> layout.
+       El "?v=8" es un truco para forzar al navegador a recargar el CSS/JS
+       cuando lo editamos (subir el número). -->
+  <link rel="stylesheet" href="css/base.css?v=8" />
+  <link rel="stylesheet" href="css/componentes.css?v=8" />
+  <link rel="stylesheet" href="css/layout.css?v=8" />
+</head>
+
+<body>
+  <div class="app">
+    <!-- ============================ CABECERA ============================ -->
+    <header class="cabecera">
+      <div class="cabecera__interior">
+        <div class="cabecera__marca">
+          Faro <span class="cabecera__sub">Control de gastos</span>
+        </div>
+
+        <div class="cabecera__acciones">
+          <!-- Navegación. Cada botón lleva data-pantalla con el nombre de la
+               vista que abre. app.js escucha los clics acá. -->
+          <nav class="nav" id="nav" aria-label="Secciones">
+            <button class="nav__item" data-pantalla="gastos" type="button">Gastos</button>
+            <button class="nav__item" data-pantalla="ingresos" type="button">Ingresos</button>
+            <button class="nav__item" data-pantalla="proyeccion" type="button">Proyección</button>
+            <button class="nav__item" data-pantalla="ajustes" type="button">Ajustes</button>
+          </nav>
+
+          <!-- Interruptor rápido de tema (claro / oscuro). El control completo,
+               con la opción "Automático", está en Ajustes. app.js lo maneja. -->
+          <button class="tema-toggle" id="tema-toggle" type="button"
+                  aria-label="Cambiar entre tema claro y oscuro" title="Tema claro / oscuro"></button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================ CONTENIDO ===========================
+         Acá adentro, cada archivo vista-*.js dibuja su pantalla. Empieza
+         vacío; app.js lo llena al arrancar. -->
+    <main class="contenido" id="contenido" aria-live="polite"></main>
+  </div>
+
+  <!-- Aviso flotante reutilizable ("Gasto agregado", etc.). Oculto hasta que
+       app.js lo necesita. -->
+  <div class="aviso" id="aviso" role="status" hidden></div>
+
+  <!-- ============================ SCRIPTS ==============================
+       ORDEN IMPORTA. De abajo hacia arriba en dependencias:
+         config                              -> claves de Supabase (o vacío)
+         supabase-js (CDN)                   -> cliente de Supabase (opcional)
+         formato + nucleo + almacenamiento   -> lógica, no dependen de nadie
+         tema                                -> maneja claro/oscuro
+         nube                                -> sincronización opcional
+         vista-*                             -> dibujan cada pantalla
+         app                                 -> une todo y arranca
+  -->
+  <script src="js/config.js?v=8"></script>
+  <!-- Cliente de Supabase. Si no hay internet o el CDN está bloqueado, la app
+       igual funciona (en modo local). -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <script src="js/formato.js?v=8"></script>
+  <script src="js/nucleo.js?v=8"></script>
+  <script src="js/almacenamiento.js?v=8"></script>
+  <script src="js/tema.js?v=8"></script>
+  <script src="js/nube.js?v=8"></script>
+  <script src="js/vista-gastos.js?v=8"></script>
+  <script src="js/vista-ingresos.js?v=8"></script>
+  <script src="js/vista-proyeccion.js?v=8"></script>
+  <script src="js/vista-ajustes.js?v=8"></script>
+  <script src="js/app.js?v=8"></script>
+</body>
+</html>

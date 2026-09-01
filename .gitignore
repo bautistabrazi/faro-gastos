@@ -1,0 +1,18 @@
+# --- Vercel ---
+.vercel/
+
+# --- Sistema operativo / editores ---
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+
+# --- Archivos temporales de trabajo (previews, tests) ---
+_preview*.html
+_test*.html
+scratchpad/
+
+# NOTA: js/config.js SÍ se sube al repo. Guarda la URL de Supabase y la
+# "anon key", que es una clave pública (la protege el Row Level Security).
+# Si el repo es privado, no hay problema. Si algún día lo hacés público y te
+# preocupa, rotá la anon key desde el panel de Supabase.

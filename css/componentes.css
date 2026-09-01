@@ -1,0 +1,951 @@
+/* ============================================================================
+ * componentes.css
+ * ----------------------------------------------------------------------------
+ * Las piezas reutilizables de la interfaz. Cada bloque está encabezado con un
+ * comentario que dice para qué sirve y en qué pantalla se usa.
+ *
+ * Índice:
+ *   1.  Botones           .boton
+ *   2.  Tarjeta           .tarjeta
+ *   3.  Formularios       .campo, .campo__etiqueta ...
+ *   4.  Segmentado        .segmentado  (el selector Único / Cuotas / Fijo)
+ *   5.  Alta rápida       .alta        (el formulario de arriba en Gastos)
+ *   6.  (libre)           — la "firma" con puntitos se movió a la sección 8
+ *   7.  Lista de gastos   .gasto-item
+ *   8.  Proyección        .ahora (tarjeta "Este mes"), .proy-mes, .proy-desglose
+ *   9.  Ajustes           .config-bloque, .chip-item
+ *   10. Aviso flotante    .aviso  (los mensajitos de "Gasto agregado")
+ *   11. Estado vacío      .vacio
+ *   12. Animación de entrada  .surge
+ * ==========================================================================*/
+
+/* ==========================================================================
+ * 1. BOTONES
+ * ========================================================================*/
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-2);
+  font-family: var(--fuente-texto);
+  font-size: var(--txt-sm);
+  font-weight: 600;
+  padding: var(--esp-3) var(--esp-4);
+  border-radius: var(--radio-md);
+  border: 1px solid transparent;
+  transition: background-color 0.15s, border-color 0.15s, transform 0.05s;
+}
+
+.boton:active { transform: translateY(1px); }
+
+/* primario: la acción principal de cada pantalla (Agregar gasto, Guardar) */
+.boton--primario {
+  background: var(--acento);
+  color: var(--acento-tinta);
+}
+.boton--primario:hover { background: color-mix(in srgb, var(--acento) 88%, black); }
+
+/* secundario: acciones de apoyo (Cancelar, Importar) */
+.boton--secundario {
+  background: var(--papel-2);
+  border-color: var(--linea);
+  color: var(--tinta);
+}
+.boton--secundario:hover { background: var(--papel-3); }
+
+/* fantasma: acciones terciarias, casi solo texto (más ▾, ver todos) */
+.boton--fantasma {
+  background: transparent;
+  color: var(--grafito);
+  padding: var(--esp-2) var(--esp-3);
+  font-weight: 500;
+}
+.boton--fantasma:hover { color: var(--tinta); background: var(--papel-2); }
+
+/* mini: los de cada fila de una lista (Editar, Borrar) */
+.boton--mini {
+  padding: var(--esp-1) var(--esp-2);
+  font-size: var(--txt-xs);
+  font-weight: 600;
+  border-radius: var(--radio-sm);
+  color: var(--grafito);
+}
+.boton--mini:hover { color: var(--tinta); background: var(--papel-2); }
+.boton--peligro:hover { color: var(--peligro); background: var(--peligro-tenue); }
+
+/* ==========================================================================
+ * 2. TARJETA
+ * Contenedor con fondo de "papel" y borde suave. Base de la alta rápida y de
+ * los bloques de Ajustes.
+ * ========================================================================*/
+.tarjeta {
+  background: var(--papel-2);
+  border: 1px solid var(--papel-3);
+  border-radius: var(--radio-lg);
+  padding: var(--esp-5);
+}
+
+/* ==========================================================================
+ * 3. FORMULARIOS
+ * ========================================================================*/
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  margin-bottom: var(--esp-4);
+}
+
+.campo__etiqueta {
+  font-size: var(--txt-xs);
+  font-weight: 600;
+  color: var(--grafito);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.campo__control,
+.campo input,
+.campo select {
+  width: 100%;
+  padding: var(--esp-3);
+  background: var(--papel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-md);
+  color: var(--tinta);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.campo input:focus,
+.campo select:focus,
+.campo__control:focus {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px var(--acento-tenue);
+}
+
+/* ayuda debajo de un campo ("= $540.000 en total") */
+.campo__ayuda {
+  font-size: var(--txt-xs);
+  color: var(--grafito);
+}
+.campo__ayuda .monto { font-size: var(--txt-xs); }
+
+/* al editar un gasto en cuotas: "Vas por la cuota 3 de 12 · pagaste..." */
+.campo__progreso {
+  font-size: var(--txt-xs);
+  color: var(--tinta);
+  background: var(--acento-tenue);
+  border-radius: var(--radio-sm);
+  padding: var(--esp-2) var(--esp-3);
+  margin-top: var(--esp-1);
+}
+
+/* fila con varios campos lado a lado */
+.campo-fila {
+  display: flex;
+  gap: var(--esp-3);
+}
+.campo-fila .campo { flex: 1; }
+
+/* ==========================================================================
+ * 4. SEGMENTADO  (Único / En cuotas / Fijo   ·   también Claro/Oscuro/Auto)
+ * ========================================================================*/
+.segmentado {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--papel-3);
+  border-radius: var(--radio-md);
+  gap: 2px;
+}
+
+.segmentado__opcion {
+  font-size: var(--txt-sm);
+  font-weight: 600;
+  color: var(--grafito);
+  padding: var(--esp-2) var(--esp-4);
+  border-radius: 7px;
+  transition: background-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.segmentado__opcion:hover { color: var(--tinta); }
+
+.segmentado__opcion--activo {
+  background: var(--papel);
+  color: var(--acento);
+  box-shadow: var(--sombra);
+}
+
+/* que ocupe todo el ancho cuando hace falta (en la alta rápida) */
+.segmentado--ancho { display: flex; }
+.segmentado--ancho .segmentado__opcion { flex: 1; text-align: center; }
+
+/* versión chica: para el filtro de horizonte de la Proyección */
+.segmentado--chico .segmentado__opcion {
+  font-size: var(--txt-xs);
+  padding: 4px var(--esp-2);
+}
+
+/* ==========================================================================
+ * 5. ALTA RÁPIDA  (el formulario de arriba de la pantalla Gastos)
+ * La idea: los dos campos que siempre se usan (qué y cuánto) bien grandes
+ * arriba; el resto plegado detrás de "más ▾".
+ * ========================================================================*/
+.alta { margin-bottom: var(--esp-6); }
+
+.alta__titulo {
+  font-size: var(--txt-lg);
+  margin-bottom: var(--esp-4);
+}
+
+/* la fila principal: descripción a la izquierda (crece), monto a la derecha */
+.alta__principal {
+  display: flex;
+  gap: var(--esp-3);
+  align-items: flex-start;
+}
+
+.alta__descripcion { flex: 1; }
+
+.alta__monto {
+  width: 8.5rem;
+  flex-shrink: 0;
+}
+/* el input del monto se ve en mono, alineado a la derecha, como en un ticket */
+.alta__monto input {
+  font-family: var(--fuente-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* separador fino dentro de la tarjeta */
+.alta__division {
+  height: 1px;
+  background: var(--linea);
+  margin: var(--esp-4) 0;
+}
+
+/* la zona que aparece/desaparece según el tipo (cuotas, hasta...) */
+.alta__extra { margin-top: var(--esp-3); }
+
+/* la zona "más" (fecha, moneda, medio, categoría): oculta por defecto */
+.alta__avanzado { margin-top: var(--esp-4); }
+
+.alta__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  margin-top: var(--esp-4);
+}
+
+/* (La "firma" del proyecto —el renglón con puntitos que une un nombre con su
+ * monto— vive ahora en la sección 8, PROYECCIÓN, que es donde se usa.) */
+
+/* ==========================================================================
+ * 7. LISTA DE GASTOS / INGRESOS  (el "registro" de abajo)
+ * ========================================================================*/
+
+/* buscador del registro */
+.buscador {
+  width: 100%;
+  padding: var(--esp-3);
+  margin-bottom: var(--esp-2);
+  background: var(--papel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-md);
+  color: var(--tinta);
+}
+.buscador:focus {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px var(--acento-tenue);
+}
+
+.lista-sin-resultados {
+  font-size: var(--txt-sm);
+  color: var(--grafito);
+  padding: var(--esp-4) 0;
+}
+
+/* botón "Ver los 9 gastos" / "Ver menos" debajo del registro */
+.lista-vermas {
+  display: block;
+  width: 100%;
+  margin-top: var(--esp-3);
+  text-align: center;
+}
+
+.gasto-lista {
+  display: flex;
+  flex-direction: column;
+}
+
+.gasto-item {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: var(--esp-4) 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.gasto-item__cuerpo { flex: 1; min-width: 0; }
+
+.gasto-item__descripcion {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gasto-item__meta {
+  font-size: var(--txt-xs);
+  color: var(--grafito);
+  margin-top: 2px;
+}
+
+/* el "chip" de moneda cuando es USD, para que salte a la vista */
+.gasto-item__moneda {
+  font-family: var(--fuente-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--acento);
+  border: 1px solid var(--acento);
+  border-radius: 4px;
+  padding: 0 3px;
+  margin-left: var(--esp-2);
+  vertical-align: middle;
+}
+
+.gasto-item__monto {
+  font-family: var(--fuente-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+  flex-shrink: 0;
+  min-width: 6.5rem;   /* que la columna de montos quede pareja */
+}
+/* en la pantalla Ingresos, el monto va en verde con "+" */
+.gasto-item__monto--positivo { color: var(--ok); }
+
+.gasto-item__acciones {
+  display: flex;
+  gap: var(--esp-1);
+  flex-shrink: 0;
+}
+
+/* fila resaltada = la que se está editando ahora mismo */
+.gasto-item--editando {
+  background: var(--acento-tenue);
+  border-radius: var(--radio-sm);
+  margin: 0 calc(-1 * var(--esp-2));
+  padding-left: var(--esp-2);
+  padding-right: var(--esp-2);
+}
+
+/* ==========================================================================
+ * 8. PROYECCIÓN  (pantalla Proyección)
+ * Dos partes:
+ *   .ahora     -> la tarjeta "Este mes" (el ancla, el total en grande)
+ *   .proy-mes  -> cada renglón de "Lo que viene" (mes · puntitos · total)
+ *   .proy-desglose / .proy-linea -> el detalle que se abre al tocar un mes
+ * ========================================================================*/
+
+/* --- Tarjeta "Este mes" --------------------------------------------------- */
+.ahora {
+  position: relative;
+  overflow: hidden;
+  background: var(--papel-2);
+  border: 1px solid var(--papel-3);
+  border-top: 2px solid var(--acento);
+  border-radius: var(--radio-lg);
+  padding: var(--esp-5);
+  margin-bottom: var(--esp-6);
+}
+
+/* leve resplandor en una esquina: guiño al "faro". Muy sutil a propósito. */
+.ahora::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 60%;
+  height: 140%;
+  background: radial-gradient(closest-side, var(--acento), transparent);
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+.ahora__eyebrow {
+  font-size: var(--txt-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--acento);
+  margin-bottom: var(--esp-3);
+}
+
+.ahora__cifra {
+  font-size: var(--txt-2xl);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--tinta);
+}
+
+/* la cuenta del mes cuando hay ingresos: entra − pagás */
+.ahora-cuenta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+  margin-bottom: var(--esp-3);
+}
+.ahora-cuenta__linea {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  font-size: var(--txt-sm);
+  color: var(--grafito);
+}
+.ahora-cuenta__linea .monto { color: var(--tinta); }
+
+/* el "te queda / te falta": el número que importa */
+.ahora-neto {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  padding-top: var(--esp-3);
+  border-top: 1px solid var(--linea);
+}
+.ahora-neto > span:first-child {
+  font-size: var(--txt-sm);
+  font-weight: 600;
+  color: var(--grafito);
+}
+.ahora-neto .monto {
+  font-size: var(--txt-xl);
+  font-weight: 700;
+}
+.ahora-neto--positivo .monto { color: var(--ok); }
+.ahora-neto--negativo .monto { color: var(--peligro); }
+
+.ahora__usd {
+  font-size: var(--txt-sm);
+  color: var(--grafito);
+  margin-top: var(--esp-3);
+}
+
+.ahora__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+  font-size: var(--txt-sm);
+  color: var(--grafito);
+  margin-top: var(--esp-4);
+}
+
+/* puntito separador entre datos de la meta */
+.ahora__punto {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--grafito);
+  opacity: 0.6;
+}
+
+.ahora__pico {
+  font-size: var(--txt-sm);
+  color: var(--grafito);
+  margin-top: var(--esp-3);
+  padding-top: var(--esp-3);
+  border-top: 1px solid var(--linea);
+}
+.ahora__pico strong { color: var(--tinta); font-weight: 600; }
+.ahora__pico .monto { font-size: var(--txt-sm); }
+
+.ahora__toggle {
+  margin-top: var(--esp-4);
+  font-size: var(--txt-sm);
+  font-weight: 600;
+  color: var(--acento);
+}
+.ahora__toggle:hover { text-decoration: underline; }
+
+/* el desglose dentro de la tarjeta "Este mes" */
+.ahora .proy-desglose {
+  margin-top: var(--esp-4);
+}
+
+/* --- Sección "Lo que viene" --------------------------------------------- */
+.proy-seccion {
+  font-family: var(--fuente-texto);
+  font-size: var(--txt-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--grafito);
+  margin-bottom: var(--esp-2);
+}
+
+/* fila con el título "LO QUE VIENE" a la izquierda y el filtro a la derecha */
+.proy-seccion-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--esp-2);
+}
+.proy-seccion-fila .proy-seccion { margin-bottom: 0; }
+
+/* el número grande de "cuotas pendientes" (la deuda total) */
+.proy-deuda {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  padding: var(--esp-3) var(--esp-4);
+  margin-bottom: var(--esp-5);
+  background: var(--papel-2);
+  border: 1px solid var(--papel-3);
+  border-radius: var(--radio-md);
+}
+.proy-deuda__etiqueta {
+  font-size: var(--txt-sm);
+  font-weight: 600;
+  color: var(--grafito);
+}
+.proy-deuda__monto {
+  font-family: var(--fuente-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.proy-nota-horizonte {
+  font-size: var(--txt-xs);
+  color: var(--grafito);
+  margin-top: var(--esp-3);
+}
+
+.proy-lista {
+  display: flex;
+  flex-direction: column;
+}
+
+.proy-mes { border-bottom: 1px solid var(--linea); }
+
+/* el renglón clickeable: mes ·············· total  ›
+ * Todos los hijos son texto simple alineado por baseline, así los puntitos
+ * (que son un borde inferior de un span vacío) caen justo sobre la línea de
+ * base y nunca cruzan por el medio de las letras. */
+.proy-mes__fila {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: var(--esp-3);
+  padding: var(--esp-4) 0 var(--esp-1);
+  text-align: left;
+}
+
+.proy-mes__nombre {
+  font-size: var(--txt-md);
+  font-weight: 500;
+  color: var(--tinta);
+  flex-shrink: 0;
+  text-transform: capitalize;
+}
+
+/* los puntitos: la "firma" del proyecto. Solo en el nivel MES. */
+.proy-mes__puntos {
+  flex: 1 1 auto;
+  min-width: var(--esp-4);
+  border-bottom: 1px dotted var(--grafito);
+  opacity: 0.5;
+  transform: translateY(-0.28em);
+}
+
+.proy-mes__cifra {
+  flex-shrink: 0;
+  font-size: var(--txt-md);
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.proy-mes__chevron {
+  flex-shrink: 0;
+  color: var(--grafito);
+  font-size: var(--txt-md);
+  transition: transform 0.15s ease;
+}
+.proy-mes__fila[aria-expanded="true"] .proy-mes__chevron { transform: rotate(90deg); }
+
+/* segunda línea chiquita bajo el renglón: dólares y/o "X pagos terminan" */
+.proy-mes__sub {
+  font-size: var(--txt-xs);
+  color: var(--grafito);
+  text-align: right;
+  padding-bottom: var(--esp-3);
+}
+
+/* lo que se despliega (sin animación a propósito: aparición instantánea para
+ * que la pantalla no "salte" cada vez que abrís o cerrás un mes) */
+.proy-mes__extra {
+  padding-bottom: var(--esp-4);
+}
+
+/* --- El desglose (consumos de un mes) ----------------------------------- */
+/* "El hilo": una línea fina neutra a la izquierda conecta el detalle con su
+ * mes. Neutra (no de color) para que no maree. */
+.proy-desglose {
+  border-left: 2px solid var(--linea);
+  padding-left: var(--esp-4);
+  margin-left: var(--esp-1);
+}
+
+.proy-linea {
+  display: flex;
+  align-items: baseline;
+  gap: var(--esp-2);
+  padding: var(--esp-2) 0;
+  border-bottom: 1px solid var(--linea);
+}
+.proy-linea:last-child { border-bottom: none; }
+
+.proy-linea__nombre {
+  flex: 1;
+  min-width: 0;
+  color: var(--tinta);
+  font-size: var(--txt-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* la CUOTA: chip bien visible, es el dato que se busca al leer el resumen */
+.proy-linea__cuota {
+  flex-shrink: 0;
+  font-family: var(--fuente-mono);
+  font-size: var(--txt-xs);
+  font-weight: 600;
+  color: var(--acento);
+  background: var(--acento-tenue);
+  padding: 2px 6px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.proy-linea__cuota--fin {
+  color: var(--atencion);
+  background: var(--atencion-tenue);
+}
+
+/* el "fijo": texto liviano, no necesita destacarse */
+.proy-linea__fijo {
+  flex-shrink: 0;
+  font-family: var(--fuente-mono);
+  font-size: var(--txt-xs);
+  color: var(--grafito);
+}
+.proy-linea__fijo--fin { color: var(--atencion); }
+
+.proy-linea__medio {
+  font-family: var(--fuente-mono);
+  font-size: var(--txt-xs);
+  color: var(--grafito);
+  margin-left: var(--esp-2);
+}
+
+.proy-linea__monto {
+  flex-shrink: 0;
+  font-size: var(--txt-sm);
+  color: var(--tinta);
+  text-align: right;
+}
+
+.proy-vacio {
+  font-size: var(--txt-sm);
+  color: var(--grafito);
+  padding: var(--esp-2) 0;
+}
+
+/* botón "+ N consumos más — ver todo" (abre el modal con la lista completa) */
+.proy-desglose__mas {
+  margin-top: var(--esp-2);
+  font-size: var(--txt-xs);
+  font-weight: 600;
+  color: var(--acento);
+}
+.proy-desglose__mas:hover { text-decoration: underline; }
+
+/* el mismo desglose pero dentro del modal: sin la línea lateral, más aire */
+.proy-desglose--modal {
+  border-left: none;
+  padding-left: 0;
+  margin-left: 0;
+}
+.proy-desglose--modal .proy-linea { padding: var(--esp-3) 0; }
+
+/* ==========================================================================
+ * 9. AJUSTES
+ * ========================================================================*/
+.config-bloque {
+  margin-bottom: var(--esp-6);
+}
+.config-bloque__titulo {
+  font-size: var(--txt-md);
+  font-weight: 700;
+  margin-bottom: var(--esp-1);
+}
+.config-bloque__ayuda {
+  font-size: var(--txt-sm);
+  color: var(--grafito);
+  margin-bottom: var(--esp-4);
+}
+
+/* lista de medios / categorías */
+.chip-lista {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--esp-3);
+}
+.chip-item {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: var(--esp-3) 0;
+  border-bottom: 1px solid var(--linea);
+}
+.chip-item__color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.chip-item__nombre { flex: 1; }
+.chip-item input[type="text"] {
+  flex: 1;
+  padding: var(--esp-2) var(--esp-3);
+  background: var(--papel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-sm);
+  color: var(--tinta);
+}
+
+.config-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+}
+
+/* ==========================================================================
+ * 10. AVISO FLOTANTE  ("Gasto agregado", "Respaldo importado")
+ * ========================================================================*/
+.aviso {
+  position: fixed;
+  left: 50%;
+  bottom: var(--esp-6);
+  transform: translateX(-50%) translateY(0);
+  z-index: 50;
+  background: var(--tinta);
+  color: var(--papel);
+  font-size: var(--txt-sm);
+  font-weight: 600;
+  padding: var(--esp-3) var(--esp-5);
+  border-radius: 999px;
+  box-shadow: var(--sombra);
+  animation: aviso-entra 0.2s ease-out;
+}
+.aviso--ok      { background: var(--ok); color: #fff; }
+.aviso--peligro { background: var(--peligro); color: #fff; }
+
+@keyframes aviso-entra {
+  from { transform: translateX(-50%) translateY(12px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+
+/* en el celular el aviso sube un poco para no chocar con la barra de nav */
+@media (max-width: 620px) {
+  .aviso { bottom: calc(var(--esp-6) + 56px); }
+}
+
+/* ==========================================================================
+ * 11. ESTADO VACÍO
+ * ========================================================================*/
+.vacio {
+  text-align: center;
+  color: var(--grafito);
+  padding: var(--esp-7) var(--esp-4);
+  border: 1px dashed var(--linea);
+  border-radius: var(--radio-lg);
+}
+.vacio__titulo {
+  font-family: var(--fuente-titulo);
+  font-size: var(--txt-lg);
+  color: var(--tinta);
+  margin-bottom: var(--esp-2);
+}
+
+/* ==========================================================================
+ * 11b. PANTALLA DE LOGIN  (solo si está configurada la sincronización)
+ * ========================================================================*/
+.login {
+  max-width: 380px;
+  margin: var(--esp-7) auto 0;
+  text-align: center;
+}
+.login__marca {
+  font-family: var(--fuente-titulo);
+  font-weight: 700;
+  font-size: var(--txt-2xl);
+  letter-spacing: -0.02em;
+  color: var(--acento);
+  margin-bottom: var(--esp-3);
+}
+.login__bajada {
+  color: var(--grafito);
+  font-size: var(--txt-sm);
+  margin-bottom: var(--esp-5);
+}
+.login__input {
+  width: 100%;
+  padding: var(--esp-3);
+  margin-bottom: var(--esp-3);
+  background: var(--papel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-md);
+  color: var(--tinta);
+  text-align: center;
+}
+.login__input:focus {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px var(--acento-tenue);
+}
+.login__boton { width: 100%; }
+.login__estado {
+  font-size: var(--txt-sm);
+  margin-top: var(--esp-3);
+  padding: var(--esp-3);
+  border-radius: var(--radio-md);
+}
+.login__estado--ok    { background: var(--acento-tenue); color: var(--tinta); }
+.login__estado--error { background: var(--peligro-tenue); color: var(--peligro); }
+.login__local {
+  margin-top: var(--esp-5);
+  font-size: var(--txt-xs);
+}
+
+/* texto "Sincronizando…" mientras se traen los datos de la nube */
+.cargando {
+  text-align: center;
+  color: var(--grafito);
+  padding: var(--esp-7) var(--esp-4);
+}
+
+/* ==========================================================================
+ * 12. ANIMACIÓN DE ENTRADA (sutil, al montar cada pantalla)
+ * ========================================================================*/
+@keyframes surge {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.surge { animation: surge 0.25s ease-out both; }
+
+/* ==========================================================================
+ * 13. MODAL  (ventana centrada; la usa la Proyección para "ver todos los
+ *     consumos" de un mes cuando son muchos). La maneja app.js.
+ * ========================================================================*/
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--esp-4);
+  background: rgba(20, 19, 23, 0.55);
+}
+
+.modal__panel {
+  width: 100%;
+  max-width: 460px;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--papel);
+  border: 1px solid var(--papel-3);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+
+.modal__cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  padding: var(--esp-4) var(--esp-5);
+  border-bottom: 1px solid var(--linea);
+}
+.modal__titulo {
+  font-size: var(--txt-md);
+  font-weight: 700;
+}
+.modal__cerrar {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--grafito);
+  font-size: 14px;
+}
+.modal__cerrar:hover { background: var(--papel-2); color: var(--tinta); }
+
+.modal__cuerpo {
+  padding: var(--esp-3) var(--esp-5) var(--esp-5);
+  overflow-y: auto;
+}
+
+/* ==========================================================================
+ * 14. AJUSTES RESPONSIVE PARA CELULAR
+ * Acá se apila lo que en pantalla ancha va en dos columnas, para que nada se
+ * salga de la pantalla. El breakpoint (480px) cubre todos los celulares.
+ * ========================================================================*/
+@media (max-width: 480px) {
+  /* menos padding en las tarjetas, para ganar ancho */
+  .tarjeta { padding: var(--esp-4); }
+  .ahora   { padding: var(--esp-4); }
+
+  /* alta rápida: "qué compraste" y "monto" uno abajo del otro */
+  .alta__principal { flex-direction: column; }
+  .alta__monto { width: 100%; }
+  .alta__monto input { text-align: left; }
+
+  /* campos que van de a dos (fecha + moneda) -> apilados */
+  .campo-fila { flex-direction: column; gap: 0; }
+
+  /* pie del formulario: "más" arriba a la izquierda, botones a lo ancho abajo */
+  .alta__pie { flex-wrap: wrap; gap: var(--esp-3); }
+  .alta__pie > div { width: 100%; }
+  .alta__pie > div .boton { flex: 1; }
+
+  /* filas del registro: que el monto no imponga un ancho fijo grande */
+  .gasto-item { gap: var(--esp-2); }
+  .gasto-item__monto { min-width: 0; }
+  .gasto-item__acciones .boton--mini { padding: 4px 6px; }
+
+  /* la deuda total: dejar que envuelva si no entra en una línea */
+  .proy-deuda { flex-wrap: wrap; }
+  /* en el detalle de un mes, el nombre se recorta pero la cuota y el monto
+     siempre quedan visibles en la misma línea */
+  .proy-linea__medio { display: none; }
+
+  /* formularios de Ajustes (medio con color, etc.) */
+  .config-bloque form.campo-fila { flex-flow: row wrap; gap: var(--esp-3); }
+
+  /* modal con menos margen interno */
+  .modal { padding: var(--esp-3); }
+  .modal__cabeza,
+  .modal__cuerpo { padding-left: var(--esp-4); padding-right: var(--esp-4); }
+}

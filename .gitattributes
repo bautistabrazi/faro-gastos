@@ -1,0 +1,5 @@
+# Guardar todo con finales de línea LF en el repo (evita ruido entre Windows/Mac/Linux)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.svg text
