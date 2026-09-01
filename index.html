@@ -89,9 +89,9 @@
          app                                 -> une todo y arranca
   -->
   <script src="js/config.js?v=8"></script>
-  <!-- Cliente de Supabase. Si no hay internet o el CDN está bloqueado, la app
-       igual funciona (en modo local). -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <!-- Cliente de Supabase (expone window.supabase.createClient). Si no hay
+       internet o el CDN está bloqueado, la app igual funciona en modo local. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script src="js/formato.js?v=8"></script>
   <script src="js/nucleo.js?v=8"></script>
