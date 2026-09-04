@@ -103,6 +103,8 @@ Gastos/
     │                         pintar, para que no parpadee. Aparte de tema.js
     │                         para no necesitar 'unsafe-inline' en el CSP.
     ├── config.js             Claves de Supabase. Vacío = modo 100% local.
+    ├── vendor/
+    │   └── supabase.js       Cliente de Supabase, alojado acá (no por CDN).
     ├── formato.js            Formatea plata, fechas y texto. Parsea montos.
     ├── nucleo.js             EL CEREBRO. Todos los cálculos: en qué meses
     │                         impacta cada gasto/ingreso, la proyección, el
@@ -311,9 +313,10 @@ la app se pueda instalar y usar hoy — la PWA ya cubre eso.
   proyecto — todo dato que haya escrito una persona pasa por ahí antes de
   meterse en un template de HTML. Se usa consistentemente en las 5 pantallas.
 - **Headers de seguridad** (`vercel.json`):
-  - `Content-Security-Policy`: solo deja ejecutar JS propio o del CDN de
-    Supabase, y bloquea que la página se abra dentro de un `<iframe>` de otro
-    sitio (`frame-ancestors 'none'`, protección contra *clickjacking*).
+  - `Content-Security-Policy`: solo deja ejecutar JS propio (`script-src 'self'`,
+    sin excepciones — ver el punto de `js/vendor/` abajo), y bloquea que la
+    página se abra dentro de un `<iframe>` de otro sitio (`frame-ancestors
+    'none'`, protección contra *clickjacking*).
   - `X-Frame-Options: DENY` — lo mismo, para navegadores viejos que no leen
     `frame-ancestors`.
   - `Strict-Transport-Security` — fuerza https siempre (Vercel ya lo hace por
@@ -322,6 +325,14 @@ la app se pueda instalar y usar hoy — la PWA ya cubre eso.
     app no usa.
   - Por eso `js/tema-inicial.js` es un archivo aparte y no un `<script>`
     inline: así el CSP no necesita `'unsafe-inline'` en `script-src`.
+- **`js/vendor/supabase.js`**: el cliente de Supabase está alojado en el
+  propio proyecto en vez de cargarlo por CDN (como se estila habitualmente).
+  Se cambió así porque cargarlo desde `cdn.jsdelivr.net` resultó poco
+  confiable en la práctica (fallos intermitentes al pedirlo como `<script>`),
+  y es una pieza demasiado crítica (sin esto no hay login ni sincronización)
+  para depender de un tercero. De paso, permite que el CSP no necesite
+  permitir ningún dominio externo en `script-src`. Para actualizar la
+  versión, ver el comentario al principio de ese archivo.
 
 **Pendiente de decisión (son config del panel de Supabase, no código)**:
 - **"Confirm email" está desactivado** (a pedido, para no tener que verificar

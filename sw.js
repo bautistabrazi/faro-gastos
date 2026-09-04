@@ -8,10 +8,12 @@
  *     traer la versión más nueva de internet primero, y solo si falla (sin
  *     conexión) usa la que quedó guardada. Así, si subimos un cambio, se ve
  *     apenas hay señal, y no queda "pegado" a una versión vieja.
- *   - "cache-first" para cosas que casi no cambian (tipografías, íconos, la
- *     librería de Supabase por CDN): si ya está guardada, se usa directo (más
- *     rápido y funciona offline), y si no, se busca en internet y se guarda
- *     para la próxima.
+ *   - "cache-first" para cosas externas que casi no cambian (las tipografías
+ *     de Google Fonts): si ya está guardada, se usa directo (más rápido y
+ *     funciona offline), y si no, se busca en internet y se guarda para la
+ *     próxima. La librería de Supabase ya NO es externa (ver
+ *     js/vendor/supabase.js) — al ser del mismo origen, sigue la rama
+ *     "network-first" de acá abajo, como el resto del código propio.
  *
  * Los pedidos a la API de Supabase (autenticación, guardar/traer datos) NO se
  * tocan acá: van directo a internet, sin pasar por ningún cache. Si fallan
@@ -25,7 +27,7 @@
 
 "use strict";
 
-var CACHE_VERSION = "faro-v6";
+var CACHE_VERSION = "faro-v7";
 
 // Archivos que se guardan apenas se instala el Service Worker, para que la
 // app abra offline incluso la primera vez que se instala sin conexión previa.
@@ -34,21 +36,22 @@ var PRECARGA = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./js/tema-inicial.js?v=12",
-  "./css/base.css?v=12",
-  "./css/componentes.css?v=12",
-  "./css/layout.css?v=12",
-  "./js/config.js?v=12",
-  "./js/formato.js?v=12",
-  "./js/nucleo.js?v=12",
-  "./js/almacenamiento.js?v=12",
-  "./js/tema.js?v=12",
-  "./js/nube.js?v=12",
-  "./js/vista-gastos.js?v=12",
-  "./js/vista-ingresos.js?v=12",
-  "./js/vista-proyeccion.js?v=12",
-  "./js/vista-ajustes.js?v=12",
-  "./js/app.js?v=12",
+  "./js/tema-inicial.js?v=13",
+  "./js/vendor/supabase.js?v=13",
+  "./css/base.css?v=13",
+  "./css/componentes.css?v=13",
+  "./css/layout.css?v=13",
+  "./js/config.js?v=13",
+  "./js/formato.js?v=13",
+  "./js/nucleo.js?v=13",
+  "./js/almacenamiento.js?v=13",
+  "./js/tema.js?v=13",
+  "./js/nube.js?v=13",
+  "./js/vista-gastos.js?v=13",
+  "./js/vista-ingresos.js?v=13",
+  "./js/vista-proyeccion.js?v=13",
+  "./js/vista-ajustes.js?v=13",
+  "./js/app.js?v=13",
   "./assets/icono.svg",
   "./assets/icono-192.png",
   "./assets/icono-512.png",
@@ -169,8 +172,8 @@ self.addEventListener("fetch", function (evento) {
     return;
   }
 
-  // Todo lo externo que llega hasta acá (Google Fonts, el CDN de
-  // supabase-js): cache-first, porque casi no cambia y así funciona offline
-  // una vez que se cargó la primera vez.
+  // Todo lo externo que llega hasta acá (hoy: solo Google Fonts): cache-first,
+  // porque casi no cambia y así funciona offline una vez que se cargó la
+  // primera vez.
   evento.respondWith(cachePrimeroRed(pedido));
 });
