@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Versión "maskable" del ícono de Faro: pensada para Android/iOS, que
+       recortan el ícono con su propia forma (círculo, "squircle", etc.).
+       Por eso acá el fondo llega hasta el borde (sin esquinas redondeadas
+       propias) y el dibujo se reduce al 80% centrado, así queda dentro de
+       la "zona segura" y ninguna máscara del sistema lo corta. -->
+  <rect width="64" height="64" fill="#4F46E5"/>
+  <g fill="#FCFCFE" transform="translate(32 32) scale(0.8) translate(-32 -32)">
+    <!-- haz de luz -->
+    <path d="M32 20 L54 12 L54 28 Z" opacity="0.55"/>
+    <!-- torre -->
+    <path d="M26 24 h12 l3 28 h-18 Z"/>
+    <!-- linterna -->
+    <rect x="27" y="15" width="10" height="9" rx="2"/>
+    <!-- base -->
+    <rect x="18" y="52" width="28" height="5" rx="2"/>
+  </g>
+</svg>

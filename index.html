@@ -6,23 +6,38 @@
   <meta name="description" content="Faro · Control de gastos. Registro de consumos, cuotas y gastos fijos, con proyección mes a mes." />
   <meta name="theme-color" content="#FCFCFE" />
   <link rel="icon" href="assets/icono.svg" type="image/svg+xml" />
+  <!-- Ícono para "Agregar a la pantalla de inicio" en iPhone (iOS ignora el
+       manifest para esto). Cuadrado a sangre completa: iOS le pone sus
+       propias esquinas redondeadas encima. -->
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <!-- Que Safari muestre la app instalada sin la barra del navegador. -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Faro" />
   <title>Faro · Control de gastos</title>
 
-  <!-- Semilla para el futuro pasaje a app / instalación en el celular. -->
+  <!-- Manifest + service worker: hacen que la app se pueda instalar y ande
+       offline (ver js/registro-sw.js y sw.js). -->
   <link rel="manifest" href="manifest.webmanifest" />
 
   <!--
     Script CHIQUITO que corre ANTES de pintar la página: lee el tema elegido
-    ("claro" / "oscuro" / "auto") y lo aplica en <html>. Va acá, inline, para
-    que no haya un "parpadeo" de color al abrir la app.
+    ("claro" / "oscuro" / "auto") y lo aplica en <html> Y en la barra del
+    navegador (meta theme-color). Va acá, inline, para que no haya un
+    "parpadeo" de color al abrir la app.
   -->
   <script>
     (function () {
       try {
         var elegido = localStorage.getItem("gastos-tema"); // puede ser null
+        var oscuro = elegido === "oscuro" ||
+          (elegido !== "claro" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+
         if (elegido === "claro") document.documentElement.setAttribute("data-theme", "light");
         else if (elegido === "oscuro") document.documentElement.setAttribute("data-theme", "dark");
-        // si es "auto" o null: no ponemos nada y manda el sistema operativo
+        // si es "auto" o null: no tocamos data-theme y manda el sistema operativo
+
+        if (oscuro) document.querySelector('meta[name="theme-color"]').setAttribute("content", "#141317");
       } catch (e) { /* localStorage bloqueado: seguimos con el tema del sistema */ }
     })();
   </script>
@@ -34,11 +49,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <!-- Estilos propios. ORDEN IMPORTA: base -> componentes -> layout.
-       El "?v=8" es un truco para forzar al navegador a recargar el CSS/JS
+       El "?v=9" es un truco para forzar al navegador a recargar el CSS/JS
        cuando lo editamos (subir el número). -->
-  <link rel="stylesheet" href="css/base.css?v=8" />
-  <link rel="stylesheet" href="css/componentes.css?v=8" />
-  <link rel="stylesheet" href="css/layout.css?v=8" />
+  <link rel="stylesheet" href="css/base.css?v=9" />
+  <link rel="stylesheet" href="css/componentes.css?v=9" />
+  <link rel="stylesheet" href="css/layout.css?v=9" />
 </head>
 
 <body>
@@ -87,21 +102,23 @@
          nube                                -> sincronización opcional
          vista-*                             -> dibujan cada pantalla
          app                                 -> une todo y arranca
+         registro-sw                         -> instala el Service Worker (PWA/offline)
   -->
-  <script src="js/config.js?v=8"></script>
+  <script src="js/config.js?v=9"></script>
   <!-- Cliente de Supabase (expone window.supabase.createClient). Si no hay
        internet o el CDN está bloqueado, la app igual funciona en modo local. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <script src="js/formato.js?v=8"></script>
-  <script src="js/nucleo.js?v=8"></script>
-  <script src="js/almacenamiento.js?v=8"></script>
-  <script src="js/tema.js?v=8"></script>
-  <script src="js/nube.js?v=8"></script>
-  <script src="js/vista-gastos.js?v=8"></script>
-  <script src="js/vista-ingresos.js?v=8"></script>
-  <script src="js/vista-proyeccion.js?v=8"></script>
-  <script src="js/vista-ajustes.js?v=8"></script>
-  <script src="js/app.js?v=8"></script>
+  <script src="js/formato.js?v=9"></script>
+  <script src="js/nucleo.js?v=9"></script>
+  <script src="js/almacenamiento.js?v=9"></script>
+  <script src="js/tema.js?v=9"></script>
+  <script src="js/nube.js?v=9"></script>
+  <script src="js/vista-gastos.js?v=9"></script>
+  <script src="js/vista-ingresos.js?v=9"></script>
+  <script src="js/vista-proyeccion.js?v=9"></script>
+  <script src="js/vista-ajustes.js?v=9"></script>
+  <script src="js/app.js?v=9"></script>
+  <script src="js/registro-sw.js?v=9"></script>
 </body>
 </html>

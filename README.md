@@ -71,6 +71,7 @@ puntual) o **Todos los meses** (el sueldo), y no tiene cuotas ni medio de pago.
 Gastos/
 ├── index.html               Punto de entrada. Carga los CSS y los JS en orden.
 ├── manifest.webmanifest      Datos para instalarla como app en el celular.
+├── sw.js                     Service Worker: cache offline (ver js/registro-sw.js).
 ├── vercel.json               Config del hosting (cache de js/css sin guardar).
 ├── .gitignore
 ├── README.md                 Este archivo.
@@ -79,7 +80,12 @@ Gastos/
 │   └── schema.sql            SQL para crear la tabla de sincronización.
 │
 ├── assets/
-│   └── icono.svg             Ícono de la app (un faro).
+│   ├── icono.svg             Ícono de la app (un faro). Favicon y manifest.
+│   ├── icono-maskable.svg    Misma imagen, a sangre completa, para Android/iOS
+│   │                         (ver PNGs derivados abajo).
+│   ├── icono-192.png / icono-512.png                    PNGs del ícono normal.
+│   ├── icono-maskable-192.png / icono-maskable-512.png  PNGs "maskable".
+│   └── apple-touch-icon.png  Ícono para "Agregar a inicio" en iPhone.
 │
 ├── css/                      ESTILOS  (se cargan en este orden)
 │   ├── base.css             Variables de color/tipografía (los "tokens"),
@@ -109,9 +115,11 @@ Gastos/
     ├── vista-proyeccion.js   Pantalla "Proyección": tarjeta "Este mes" + deuda
     │                         + lista de meses + desglose (con modal si son muchos).
     ├── vista-ajustes.js      Pantalla "Ajustes".
-    └── app.js                EL COORDINADOR. Se carga último. Estado en memoria,
-                              login (si hay nube), navegación, modal, y las
-                              herramientas comunes para las pantallas.
+    ├── app.js                EL COORDINADOR. Se carga último. Estado en memoria,
+    │                         login (si hay nube), navegación, modal, y las
+    │                         herramientas comunes para las pantallas.
+    └── registro-sw.js        Instala el Service Worker (sw.js) para que la
+                              app se pueda usar offline e instalar.
 ```
 
 ### Cómo se conecta todo
@@ -246,12 +254,47 @@ Cada `git push` a `main` vuelve a desplegar solo.
   cuenta? Creá una" → entrás.
 - Abrí la misma URL en el celular, iniciá sesión con el mismo email y
   contraseña → ves los mismos datos.
-- En el celular, "Agregar a la pantalla de inicio" para que quede como una app.
+- En el celular, "Agregar a la pantalla de inicio" para que quede como una app
+  (ver *"Instalarla en el celular"* más abajo).
 
 ### Volver a modo local
 
 En **Ajustes → Sincronización → "Seguir sin cuenta"**, o dejá `js/config.js`
 vacío otra vez.
+
+---
+
+## Instalarla en el celular (PWA)
+
+Faro es una **PWA** (Progressive Web App): se instala directo desde el
+navegador, sin pasar por App Store ni Play Store, sin aprobación de nadie y
+sin costo. Una vez instalada, anda offline (muestra los últimos datos que
+haya podido cargar) y abre en pantalla completa, como cualquier app.
+
+Requiere que esté servida por https (Vercel cumple esto); no funciona
+abriendo `index.html` como archivo local.
+
+- **Android (Chrome):** entrás a la URL → aparece un cartel "Agregar a la
+  pantalla de inicio" (o Menú ⋮ → "Instalar app" / "Agregar a pantalla de inicio").
+- **iPhone (Safari):** entrás a la URL → botón compartir (el cuadradito con la
+  flecha) → "Agregar a pantalla de inicio". Safari no ofrece instalar PWAs desde
+  otro navegador (Chrome/Firefox en iOS) ni un cartel automático: este paso es
+  siempre manual.
+
+Qué hace posible esto (por si hay que tocarlo):
+- `manifest.webmanifest` — nombre, ícono e ícono "maskable" (se adapta a la
+  forma que le pida Android), color de fondo, `display: standalone`.
+- `sw.js` + `js/registro-sw.js` — el Service Worker: cachea la app la primera
+  vez que se abre y la sirve desde ahí si después no hay conexión. Los pedidos
+  a Supabase nunca se cachean (siempre van a internet, tal cual).
+- `assets/apple-touch-icon.png` — ícono específico para iOS (Safari no lee el
+  manifest para esto).
+
+**¿Y publicarla en las tiendas (App Store / Play Store)?** Es un paso aparte,
+no obligatorio: significa empaquetar esta misma web con **Capacitor** (o un
+TWA para solo Android) y sí pasar por la revisión de Apple/Google (cuenta de
+Apple Developer $99/año + Google Play ~$25 única vez). No hace falta para que
+la app se pueda instalar y usar hoy — la PWA ya cubre eso.
 
 ---
 
