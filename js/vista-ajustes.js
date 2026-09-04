@@ -38,6 +38,11 @@
       '<h1 class="pantalla__titulo">Ajustes</h1>' +
       '<p class="pantalla__bajada">Tarjetas, categorías, respaldo de tus datos y apariencia.</p>' +
 
+      // Sincronización va PRIMERO a propósito: es donde vive "Cerrar sesión",
+      // y con las categorías por defecto ya cargadas, si iba más abajo había
+      // que scrollear bastante para encontrarlo (se reportó como "no hay
+      // forma de cerrar sesión" cuando en realidad estaba, solo que escondido).
+      bloqueSync() +
       bloqueMedios(estado) +
       bloqueCategorias(estado.categorias, {
         kind: "gasto",
@@ -51,7 +56,6 @@
         ayuda: "Opcionales. Para distinguir sueldo, alquiler, freelance, etc.",
         placeholder: "Ej: Dividendos",
       }) +
-      bloqueSync() +
       bloqueDatos(estado) +
       bloqueTema(temaActual) +
 
