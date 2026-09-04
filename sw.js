@@ -25,7 +25,7 @@
 
 "use strict";
 
-var CACHE_VERSION = "faro-v2";
+var CACHE_VERSION = "faro-v3";
 
 // Archivos que se guardan apenas se instala el Service Worker, para que la
 // app abra offline incluso la primera vez que se instala sin conexión previa.
@@ -34,6 +34,7 @@ var PRECARGA = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
+  "./js/tema-inicial.js?v=9",
   "./css/base.css?v=9",
   "./css/componentes.css?v=9",
   "./css/layout.css?v=9",

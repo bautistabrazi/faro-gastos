@@ -99,6 +99,9 @@ Gastos/
 │                            (barra abajo en el celular), la columna central.
 │
 └── js/                      LÓGICA  (se cargan en este orden)
+    ├── tema-inicial.js       Se carga en <head>: aplica el tema ANTES de
+    │                         pintar, para que no parpadee. Aparte de tema.js
+    │                         para no necesitar 'unsafe-inline' en el CSP.
     ├── config.js             Claves de Supabase. Vacío = modo 100% local.
     ├── formato.js            Formatea plata, fechas y texto. Parsea montos.
     ├── nucleo.js             EL CEREBRO. Todos los cálculos: en qué meses
@@ -295,6 +298,43 @@ no obligatorio: significa empaquetar esta misma web con **Capacitor** (o un
 TWA para solo Android) y sí pasar por la revisión de Apple/Google (cuenta de
 Apple Developer $99/año + Google Play ~$25 única vez). No hace falta para que
 la app se pueda instalar y usar hoy — la PWA ya cubre eso.
+
+---
+
+## Seguridad
+
+- **RLS en Supabase**: la tabla `estados` tiene Row Level Security con una
+  política `auth.uid() = user_id` en lectura y escritura. Aunque alguien arme
+  un pedido a mano a la API con la `anon key` (que es pública a propósito),
+  solo puede ver y tocar SU PROPIA fila.
+- **Contra XSS**: `js/formato.js` tiene `escapar()`, y es la regla de oro del
+  proyecto — todo dato que haya escrito una persona pasa por ahí antes de
+  meterse en un template de HTML. Se usa consistentemente en las 5 pantallas.
+- **Headers de seguridad** (`vercel.json`):
+  - `Content-Security-Policy`: solo deja ejecutar JS propio o del CDN de
+    Supabase, y bloquea que la página se abra dentro de un `<iframe>` de otro
+    sitio (`frame-ancestors 'none'`, protección contra *clickjacking*).
+  - `X-Frame-Options: DENY` — lo mismo, para navegadores viejos que no leen
+    `frame-ancestors`.
+  - `Strict-Transport-Security` — fuerza https siempre (Vercel ya lo hace por
+    su cuenta en `*.vercel.app`, esto lo deja explícito).
+  - `Permissions-Policy` — apaga cámara, micrófono, ubicación, etc. que la
+    app no usa.
+  - Por eso `js/tema-inicial.js` es un archivo aparte y no un `<script>`
+    inline: así el CSP no necesita `'unsafe-inline'` en `script-src`.
+
+**Pendiente de decisión (son config del panel de Supabase, no código)**:
+- **"Confirm email" está desactivado** (a pedido, para no tener que verificar
+  el mail en cada prueba). Mientras esté así, cualquiera puede crear una
+  cuenta con el email de otra persona sin comprobar que le pertenece — no
+  puede ver los datos de esa persona (el RLS lo impide), pero sí "ocupa" ese
+  email. Si el proyecto pasa a tener usuarios de verdad, conviene reactivarlo
+  en **Authentication → Providers → Email**.
+- **Contraseña mínima**: hoy 6 caracteres (default de Supabase y de
+  `js/app.js`). Se puede subir en **Authentication → Policies**.
+- **Protección extra de login**, apagadas por default en Supabase: chequeo de
+  contraseñas filtradas (HaveIBeenPwned) y CAPTCHA en el formulario, ambas en
+  **Authentication → Settings**.
 
 ---
 
