@@ -157,11 +157,15 @@
      *   modo: "entrar" (default) o "crear" (formulario de cuenta nueva).
      * ---------------------------------------------------------------- */
     _mostrarLogin: function (modo) {
+      // Normalizamos modo: cualquier valor que no sea "crear" se trata como "entrar".
       modo = modo === "crear" ? "crear" : "entrar";
       var self = this;
-      document.body.classList.add("sin-sesion");
-      this.cerrarModal();
+      document.body.classList.add("sin-sesion"); // esconde la nav (ver CSS)
+      this.cerrarModal(); // por si había un modal abierto de la pantalla anterior
 
+      // Armamos el HTML de la pantalla. El texto y las etiquetas cambian según
+      // el modo ("crear" cuenta vs. "entrar" con una existente), pero es el
+      // mismo formulario (email + contraseña) en los dos casos.
       this._contenedor.innerHTML =
         '<div class="login surge">' +
           '<div class="login__marca">Faro</div>' +
@@ -172,6 +176,9 @@
           '<form id="login-form" autocomplete="on">' +
             '<input type="email" id="login-email" required placeholder="tu@email.com" ' +
               'autocomplete="email" class="login__input" />' +
+            // autocomplete "new-password" vs "current-password": le sugiere al
+            // navegador si tiene que ofrecer generar una contraseña o autocompletar
+            // una guardada.
             '<input type="password" id="login-password" required minlength="6" placeholder="Contraseña" ' +
               'autocomplete="' + (modo === "crear" ? "new-password" : "current-password") + '" ' +
               'class="login__input" />' +
@@ -179,6 +186,7 @@
               (modo === "crear" ? "Crear cuenta" : "Iniciar sesión") + '</button>' +
           '</form>' +
           '<p class="login__estado" id="login-estado" hidden></p>' +
+          // Link para saltar al otro modo (crear <-> entrar) sin recargar la página.
           '<button type="button" class="boton boton--fantasma login__cambiar" id="login-cambiar-modo">' +
             (modo === "crear" ? "¿Ya tenés cuenta? Iniciá sesión" : "¿No tenés cuenta? Creá una") +
           '</button>' +
@@ -186,35 +194,44 @@
             'Seguir sin cuenta (solo en este dispositivo)</button>' +
         '</div>';
 
+      // Referencias a los elementos que vamos a leer/actualizar al enviar el form.
       var form = this._contenedor.querySelector("#login-form");
       var estado = this._contenedor.querySelector("#login-estado");
       var boton = this._contenedor.querySelector("#login-enviar");
-      var textoBoton = modo === "crear" ? "Crear cuenta" : "Iniciar sesión";
+      var textoBoton = modo === "crear" ? "Crear cuenta" : "Iniciar sesión"; // para restaurar el botón si falla
 
       form.addEventListener("submit", function (e) {
-        e.preventDefault();
+        e.preventDefault(); // no queremos que el form recargue la página
         var email = self._contenedor.querySelector("#login-email").value.trim();
         var password = self._contenedor.querySelector("#login-password").value;
-        if (!email || !password) return;
+        if (!email || !password) return; // el "required" del input ya cubre esto, doble chequeo
 
+        // Feedback visual: deshabilitamos el botón y avisamos que está en curso.
         estado.hidden = true;
         boton.disabled = true;
         boton.textContent = modo === "crear" ? "Creando…" : "Entrando…";
 
+        // Según el modo, llamamos a una función distinta de Nube, pero el resto
+        // del manejo (éxito / error) es igual para las dos.
         var Nube = window.Gastos.Nube;
         var accion = modo === "crear" ? Nube.registrarse(email, password) : Nube.iniciarSesion(email, password);
 
         accion.then(function () {
+          // Chequeamos si ya quedamos con sesión iniciada (signInWithPassword
+          // siempre la deja; signUp solo si "Confirm email" está desactivado
+          // en el proyecto de Supabase).
           return Nube.sesion();
         }).then(function (s) {
-          if (s) return; // hay sesión: alCambiarSesion ya disparó _trasLogin()
-          // (solo pasa al crear cuenta con "Confirm email" activado en Supabase)
+          if (s) return; // hay sesión: alCambiarSesion() (en iniciar()) ya disparó _trasLogin()
+          // No hay sesión: se creó la cuenta pero falta confirmar el email.
           estado.textContent = "Cuenta creada. Confirmá tu email (te mandamos un enlace) y después iniciá sesión.";
           estado.className = "login__estado login__estado--ok";
           estado.hidden = false;
           boton.disabled = false;
           boton.textContent = textoBoton;
         }).catch(function (err) {
+          // Credenciales inválidas, email repetido, etc. (mensaje ya traducido
+          // por traducirError() dentro de registrarse()/iniciarSesion()).
           estado.textContent = err.message || "Algo falló.";
           estado.className = "login__estado login__estado--error";
           estado.hidden = false;
@@ -223,10 +240,14 @@
         });
       });
 
+      // "¿No tenés cuenta? Creá una" / "¿Ya tenés cuenta? Iniciá sesión":
+      // redibuja la misma pantalla en el otro modo.
       this._contenedor.querySelector("#login-cambiar-modo").addEventListener("click", function () {
         self._mostrarLogin(modo === "crear" ? "entrar" : "crear");
       });
 
+      // "Seguir sin cuenta": recuerda la elección en localStorage y recarga,
+      // así iniciar() entra directo en modo local (ver más arriba).
       this._contenedor.querySelector("#login-sin-cuenta").addEventListener("click", function () {
         try { window.localStorage.setItem("gastos-sin-nube", "1"); } catch (e) {}
         window.location.reload();
