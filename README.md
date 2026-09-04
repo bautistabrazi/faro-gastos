@@ -242,10 +242,10 @@ Cada `git push` a `main` vuelve a desplegar solo.
 
 ### 4) Probar
 
-- Abrí la URL de Vercel en la compu. Te pide el email → te llega un enlace →
-  lo abrís **en la misma compu** → entrás.
-- Abrí la misma URL en el celular, mismo email, mismo enlace → ves los mismos
-  datos.
+- Abrí la URL de Vercel en la compu. Te pide email + contraseña → "¿No tenés
+  cuenta? Creá una" → entrás.
+- Abrí la misma URL en el celular, iniciá sesión con el mismo email y
+  contraseña → ves los mismos datos.
 - En el celular, "Agregar a la pantalla de inicio" para que quede como una app.
 
 ### Volver a modo local

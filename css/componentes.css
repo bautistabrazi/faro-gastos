@@ -831,8 +831,12 @@
 }
 .login__estado--ok    { background: var(--acento-tenue); color: var(--tinta); }
 .login__estado--error { background: var(--peligro-tenue); color: var(--peligro); }
+.login__cambiar {
+  margin-top: var(--esp-4);
+  font-size: var(--txt-sm);
+}
 .login__local {
-  margin-top: var(--esp-5);
+  margin-top: var(--esp-2);
   font-size: var(--txt-xs);
 }
 

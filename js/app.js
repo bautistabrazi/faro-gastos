@@ -131,11 +131,6 @@
       if (self._sesionActiva) return; // evitar hacerlo dos veces
       self._sesionActiva = true;
 
-      // limpiar el "#access_token=..." que deja el enlace mágico en la URL
-      if (window.location.hash && window.location.hash.indexOf("access_token") !== -1) {
-        try { history.replaceState(null, "", window.location.pathname); } catch (e) {}
-      }
-
       self._contenedor.innerHTML = '<p class="cargando">Sincronizando tus datos…</p>';
 
       window.Gastos.Nube.cargar().then(function (r) {
@@ -156,11 +151,13 @@
     },
 
     /* ------------------------------------------------------------------
-     * _mostrarLogin()
-     * Pantalla de inicio de sesión (email + enlace mágico). Ocupa toda la
+     * _mostrarLogin(modo)
+     * Pantalla de inicio de sesión (email + contraseña). Ocupa toda la
      * pantalla y oculta la navegación.
+     *   modo: "entrar" (default) o "crear" (formulario de cuenta nueva).
      * ---------------------------------------------------------------- */
-    _mostrarLogin: function () {
+    _mostrarLogin: function (modo) {
+      modo = modo === "crear" ? "crear" : "entrar";
       var self = this;
       document.body.classList.add("sin-sesion");
       this.cerrarModal();
@@ -168,15 +165,23 @@
       this._contenedor.innerHTML =
         '<div class="login surge">' +
           '<div class="login__marca">Faro</div>' +
-          '<p class="login__bajada">Sincronizá tus gastos entre el celular y la compu. ' +
-          'Te mandamos un enlace a tu email para entrar, sin contraseña.</p>' +
+          '<p class="login__bajada">' + (modo === "crear"
+            ? "Creá una cuenta para sincronizar tus gastos entre el celular y la compu."
+            : "Iniciá sesión para sincronizar tus gastos entre el celular y la compu.") +
+          '</p>' +
           '<form id="login-form" autocomplete="on">' +
             '<input type="email" id="login-email" required placeholder="tu@email.com" ' +
               'autocomplete="email" class="login__input" />' +
+            '<input type="password" id="login-password" required minlength="6" placeholder="Contraseña" ' +
+              'autocomplete="' + (modo === "crear" ? "new-password" : "current-password") + '" ' +
+              'class="login__input" />' +
             '<button type="submit" class="boton boton--primario login__boton" id="login-enviar">' +
-              'Enviarme el enlace</button>' +
+              (modo === "crear" ? "Crear cuenta" : "Iniciar sesión") + '</button>' +
           '</form>' +
           '<p class="login__estado" id="login-estado" hidden></p>' +
+          '<button type="button" class="boton boton--fantasma login__cambiar" id="login-cambiar-modo">' +
+            (modo === "crear" ? "¿Ya tenés cuenta? Iniciá sesión" : "¿No tenés cuenta? Creá una") +
+          '</button>' +
           '<button type="button" class="boton boton--fantasma login__local" id="login-sin-cuenta">' +
             'Seguir sin cuenta (solo en este dispositivo)</button>' +
         '</div>';
@@ -184,26 +189,42 @@
       var form = this._contenedor.querySelector("#login-form");
       var estado = this._contenedor.querySelector("#login-estado");
       var boton = this._contenedor.querySelector("#login-enviar");
+      var textoBoton = modo === "crear" ? "Crear cuenta" : "Iniciar sesión";
 
       form.addEventListener("submit", function (e) {
         e.preventDefault();
         var email = self._contenedor.querySelector("#login-email").value.trim();
-        if (!email) return;
+        var password = self._contenedor.querySelector("#login-password").value;
+        if (!email || !password) return;
+
+        estado.hidden = true;
         boton.disabled = true;
-        boton.textContent = "Enviando…";
-        window.Gastos.Nube.enviarEnlace(email).then(function () {
-          estado.textContent = "Listo. Te mandamos un enlace a " + email +
-            ". Abrilo en este mismo dispositivo para entrar.";
+        boton.textContent = modo === "crear" ? "Creando…" : "Entrando…";
+
+        var Nube = window.Gastos.Nube;
+        var accion = modo === "crear" ? Nube.registrarse(email, password) : Nube.iniciarSesion(email, password);
+
+        accion.then(function () {
+          return Nube.sesion();
+        }).then(function (s) {
+          if (s) return; // hay sesión: alCambiarSesion ya disparó _trasLogin()
+          // (solo pasa al crear cuenta con "Confirm email" activado en Supabase)
+          estado.textContent = "Cuenta creada. Confirmá tu email (te mandamos un enlace) y después iniciá sesión.";
           estado.className = "login__estado login__estado--ok";
           estado.hidden = false;
-          form.hidden = true;
+          boton.disabled = false;
+          boton.textContent = textoBoton;
         }).catch(function (err) {
-          estado.textContent = err.message || "No se pudo enviar el enlace.";
+          estado.textContent = err.message || "Algo falló.";
           estado.className = "login__estado login__estado--error";
           estado.hidden = false;
           boton.disabled = false;
-          boton.textContent = "Enviarme el enlace";
+          boton.textContent = textoBoton;
         });
+      });
+
+      this._contenedor.querySelector("#login-cambiar-modo").addEventListener("click", function () {
+        self._mostrarLogin(modo === "crear" ? "entrar" : "crear");
       });
 
       this._contenedor.querySelector("#login-sin-cuenta").addEventListener("click", function () {

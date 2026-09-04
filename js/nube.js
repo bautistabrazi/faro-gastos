@@ -7,8 +7,8 @@
  *   - Si NO hay configuración (js/config.js vacío) o la página se abrió como
  *     archivo local (file://), este módulo se "apaga": disponible() devuelve
  *     false y la app corre 100% local.
- *   - Si SÍ hay configuración, la app pide iniciar sesión con un email. Supabase
- *     manda un "enlace mágico"; al abrirlo, quedás logueado.
+ *   - Si SÍ hay configuración, la app pide iniciar sesión con email + contraseña
+ *     (o crear una cuenta si todavía no existe).
  *   - Los datos se guardan como UN solo JSON por usuario en la tabla `estados`
  *     (ver supabase/schema.sql). Es simple a propósito: no hay tablas separadas.
  *
@@ -76,18 +76,28 @@
   }
 
   /* ------------------------------------------------------------------
-   * enviarEnlace(email)
-   * Manda el "enlace mágico" al email. Devuelve una promesa que se
-   * resuelve si salió bien y se rechaza con un Error si falló.
-   * El enlace vuelve a ESTA misma página (sirve en localhost y en Vercel).
+   * registrarse(email, password)
+   * Crea una cuenta nueva. Si el proyecto de Supabase tiene "Confirm email"
+   * activado, la cuenta queda creada pero SIN sesión hasta que se confirme
+   * por mail (usar sesion() para saber si ya quedó logueado). Se rechaza
+   * con un Error legible si el email ya existe o la contraseña es débil.
    * ---------------------------------------------------------------- */
-  function enviarEnlace(email) {
+  function registrarse(email, password) {
     if (!cliente) return Promise.reject(new Error("La nube no está configurada."));
-    var volverA = window.location.origin + window.location.pathname;
-    return cliente.auth.signInWithOtp({
-      email: email,
-      options: { emailRedirectTo: volverA },
-    }).then(function (r) {
+    return cliente.auth.signUp({ email: email, password: password }).then(function (r) {
+      if (r.error) throw new Error(traducirError(r.error.message));
+      return true;
+    });
+  }
+
+  /* ------------------------------------------------------------------
+   * iniciarSesion(email, password)
+   * Inicia sesión con email + contraseña. Se rechaza con un Error legible
+   * si las credenciales no son válidas.
+   * ---------------------------------------------------------------- */
+  function iniciarSesion(email, password) {
+    if (!cliente) return Promise.reject(new Error("La nube no está configurada."));
+    return cliente.auth.signInWithPassword({ email: email, password: password }).then(function (r) {
       if (r.error) throw new Error(traducirError(r.error.message));
       return true;
     });
@@ -105,7 +115,7 @@
   /* ------------------------------------------------------------------
    * alCambiarSesion(callback)
    * Llama a callback(evento, sesion) cuando el usuario entra o sale
-   * (por ejemplo al volver del enlace mágico).
+   * (por ejemplo justo después de iniciarSesion()).
    * ---------------------------------------------------------------- */
   function alCambiarSesion(callback) {
     if (!cliente) return;
@@ -177,7 +187,11 @@
     msg = String(msg || "");
     if (/rate limit|too many/i.test(msg)) return "Demasiados intentos. Esperá unos minutos.";
     if (/invalid email/i.test(msg)) return "Ese email no parece válido.";
-    return "No se pudo enviar el enlace. " + msg;
+    if (/invalid login credentials/i.test(msg)) return "Email o contraseña incorrectos.";
+    if (/already registered|already.*exists/i.test(msg)) return "Ya existe una cuenta con ese email. Iniciá sesión.";
+    if (/password.*(at least|should be|weak)/i.test(msg)) return "La contraseña debe tener al menos 6 caracteres.";
+    if (/email not confirmed/i.test(msg)) return "Confirmá tu email (te mandamos un enlace) antes de entrar.";
+    return "Algo falló. " + msg;
   }
 
   /* ================================================================*/
@@ -186,7 +200,8 @@
     iniciar: iniciar,
     sesion: sesion,
     emailActual: emailActual,
-    enviarEnlace: enviarEnlace,
+    registrarse: registrarse,
+    iniciarSesion: iniciarSesion,
     salir: salir,
     alCambiarSesion: alCambiarSesion,
     cargar: cargar,
