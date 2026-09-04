@@ -96,6 +96,11 @@
       this._modoNube = true;
       Nube.iniciar();
       Nube.alCambiarSesion(function (evento) {
+        // PASSWORD_RECOVERY: la persona tocó el enlace de "olvidé mi
+        // contraseña" que le mandamos por mail. Supabase ya le dio una
+        // sesión (especial, solo sirve para esto) — en vez de entrar
+        // directo a la app, le pedimos que elija la contraseña nueva.
+        if (evento === "PASSWORD_RECOVERY") { self._mostrarNuevaPassword(); return; }
         if (evento === "SIGNED_IN") self._trasLogin();
         if (evento === "SIGNED_OUT") { self._sesionActiva = false; self._mostrarLogin(); }
       });
@@ -152,16 +157,23 @@
 
     /* ------------------------------------------------------------------
      * _mostrarLogin(modo)
-     * Pantalla de inicio de sesión (email + contraseña). Ocupa toda la
-     * pantalla y oculta la navegación.
-     *   modo: "entrar" (default) o "crear" (formulario de cuenta nueva).
+     * Pantalla de inicio de sesión. Ocupa toda la pantalla y oculta la nav.
+     *   modo: "entrar" (default) | "crear" (cuenta nueva) |
+     *         "recuperar" (pedir el enlace para elegir otra contraseña).
      * ---------------------------------------------------------------- */
     _mostrarLogin: function (modo) {
-      // Normalizamos modo: cualquier valor que no sea "crear" se trata como "entrar".
-      modo = modo === "crear" ? "crear" : "entrar";
+      // Normalizamos: cualquier valor que no sea "crear" o "recuperar" cae en "entrar".
+      if (modo !== "crear" && modo !== "recuperar") modo = "entrar";
       var self = this;
       document.body.classList.add("sin-sesion"); // esconde la nav (ver CSS)
       this.cerrarModal(); // por si había un modal abierto de la pantalla anterior
+
+      // "recuperar" es una pantalla más chica (solo pide el email), así que
+      // la armamos aparte para no llenar de "if (modo === ...)" el resto.
+      if (modo === "recuperar") {
+        this._mostrarRecuperar();
+        return;
+      }
 
       // Armamos el HTML de la pantalla. El texto y las etiquetas cambian según
       // el modo ("crear" cuenta vs. "entrar" con una existente), pero es el
@@ -186,6 +198,12 @@
               (modo === "crear" ? "Crear cuenta" : "Iniciar sesión") + '</button>' +
           '</form>' +
           '<p class="login__estado" id="login-estado" hidden></p>' +
+          // "¿Olvidaste tu contraseña?" solo tiene sentido al INICIAR sesión
+          // (al crear cuenta todavía no hay contraseña que olvidar).
+          (modo === "entrar"
+            ? '<button type="button" class="boton boton--fantasma login__cambiar" id="login-olvide">' +
+                '¿Olvidaste tu contraseña?</button>'
+            : '') +
           // Link para saltar al otro modo (crear <-> entrar) sin recargar la página.
           '<button type="button" class="boton boton--fantasma login__cambiar" id="login-cambiar-modo">' +
             (modo === "crear" ? "¿Ya tenés cuenta? Iniciá sesión" : "¿No tenés cuenta? Creá una") +
@@ -246,11 +264,124 @@
         self._mostrarLogin(modo === "crear" ? "entrar" : "crear");
       });
 
+      // "¿Olvidaste tu contraseña?" (solo existe en modo "entrar").
+      var linkOlvide = this._contenedor.querySelector("#login-olvide");
+      if (linkOlvide) {
+        linkOlvide.addEventListener("click", function () { self._mostrarLogin("recuperar"); });
+      }
+
       // "Seguir sin cuenta": recuerda la elección en localStorage y recarga,
       // así iniciar() entra directo en modo local (ver más arriba).
       this._contenedor.querySelector("#login-sin-cuenta").addEventListener("click", function () {
         try { window.localStorage.setItem("gastos-sin-nube", "1"); } catch (e) {}
         window.location.reload();
+      });
+    },
+
+    /* ------------------------------------------------------------------
+     * _mostrarRecuperar()
+     * Pantalla chica para pedir el enlace de "olvidé mi contraseña": solo
+     * el email. La usa _mostrarLogin("recuperar"); no se llama directo.
+     * ---------------------------------------------------------------- */
+    _mostrarRecuperar: function () {
+      var self = this;
+
+      this._contenedor.innerHTML =
+        '<div class="login surge">' +
+          '<div class="login__marca">Faro</div>' +
+          '<p class="login__bajada">Te mandamos un enlace a tu email para elegir una contraseña nueva.</p>' +
+          '<form id="recuperar-form" autocomplete="on">' +
+            '<input type="email" id="recuperar-email" required placeholder="tu@email.com" ' +
+              'autocomplete="email" class="login__input" />' +
+            '<button type="submit" class="boton boton--primario login__boton" id="recuperar-enviar">' +
+              'Enviarme el enlace</button>' +
+          '</form>' +
+          '<p class="login__estado" id="recuperar-estado" hidden></p>' +
+          '<button type="button" class="boton boton--fantasma login__cambiar" id="recuperar-volver">' +
+            'Volver a iniciar sesión</button>' +
+        '</div>';
+
+      var form = this._contenedor.querySelector("#recuperar-form");
+      var estado = this._contenedor.querySelector("#recuperar-estado");
+      var boton = this._contenedor.querySelector("#recuperar-enviar");
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var email = self._contenedor.querySelector("#recuperar-email").value.trim();
+        if (!email) return;
+
+        estado.hidden = true;
+        boton.disabled = true;
+        boton.textContent = "Enviando…";
+
+        window.Gastos.Nube.enviarRecuperacion(email).then(function () {
+          estado.textContent = "Listo. Si " + email + " tiene una cuenta, te va a llegar un enlace " +
+            "para elegir una contraseña nueva. Abrilo en este mismo dispositivo.";
+          estado.className = "login__estado login__estado--ok";
+          estado.hidden = false;
+          form.hidden = true; // ya se mandó; no tiene sentido dejar el form activo
+        }).catch(function (err) {
+          estado.textContent = err.message || "No se pudo enviar el enlace.";
+          estado.className = "login__estado login__estado--error";
+          estado.hidden = false;
+          boton.disabled = false;
+          boton.textContent = "Enviarme el enlace";
+        });
+      });
+
+      this._contenedor.querySelector("#recuperar-volver").addEventListener("click", function () {
+        self._mostrarLogin("entrar");
+      });
+    },
+
+    /* ------------------------------------------------------------------
+     * _mostrarNuevaPassword()
+     * Se muestra cuando llega el evento PASSWORD_RECOVERY (la persona tocó
+     * el enlace que le mandó enviarRecuperacion()). Solo pide la contraseña
+     * nueva; ya hay una sesión (de recuperación) activa en ese momento.
+     * ---------------------------------------------------------------- */
+    _mostrarNuevaPassword: function () {
+      var self = this;
+      document.body.classList.add("sin-sesion");
+      this.cerrarModal();
+
+      this._contenedor.innerHTML =
+        '<div class="login surge">' +
+          '<div class="login__marca">Faro</div>' +
+          '<p class="login__bajada">Elegí una contraseña nueva para tu cuenta.</p>' +
+          '<form id="nueva-password-form" autocomplete="off">' +
+            '<input type="password" id="nueva-password" required minlength="6" placeholder="Contraseña nueva" ' +
+              'autocomplete="new-password" class="login__input" />' +
+            '<button type="submit" class="boton boton--primario login__boton" id="nueva-password-enviar">' +
+              'Guardar contraseña</button>' +
+          '</form>' +
+          '<p class="login__estado" id="nueva-password-estado" hidden></p>' +
+        '</div>';
+
+      var form = this._contenedor.querySelector("#nueva-password-form");
+      var estado = this._contenedor.querySelector("#nueva-password-estado");
+      var boton = this._contenedor.querySelector("#nueva-password-enviar");
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var password = self._contenedor.querySelector("#nueva-password").value;
+        if (!password) return;
+
+        boton.disabled = true;
+        boton.textContent = "Guardando…";
+
+        window.Gastos.Nube.actualizarPassword(password).then(function () {
+          // Ya quedamos logueados con la sesión de recuperación: entramos
+          // directo a la app, como después de cualquier login normal.
+          self.aviso("Contraseña actualizada", "ok");
+          self._trasLogin();
+        }).catch(function (err) {
+          estado.textContent = err.message || "No se pudo actualizar la contraseña.";
+          estado.className = "login__estado login__estado--error";
+          estado.hidden = false;
+          boton.disabled = false;
+          boton.textContent = "Guardar contraseña";
+        });
       });
     },
 

@@ -83,8 +83,21 @@
           '<button class="boton boton--secundario" id="sync-activar" type="button">Activar sincronización</button>' +
         '</div>';
     } else {
-      cuerpo = '<p class="config-bloque__ayuda">La sincronización no está configurada. ' +
-        'La app funciona 100% local (ver <code>js/config.js</code> y el README).</p>';
+      // "local" (sin elegirlo a propósito): puede ser que esta app nunca
+      // tuvo la nube configurada, O que la tiene pero no se pudo conectar
+      // justo ahora (sin internet, CDN caído). Nube.diagnostico() distingue
+      // los dos casos para no confundir "nunca configurado" con "temporal".
+      var razon = window.Gastos.Nube ? window.Gastos.Nube.diagnostico() : "sin-config";
+      if (razon === "sin-libreria") {
+        cuerpo = '<p class="config-bloque__ayuda">No se pudo conectar con la nube en este momento. ' +
+          'Revisá tu conexión a internet.</p>' +
+          '<div class="config-acciones">' +
+            '<button class="boton boton--secundario" id="sync-reintentar" type="button">Reintentar</button>' +
+          '</div>';
+      } else {
+        cuerpo = '<p class="config-bloque__ayuda">Esta app corre en modo local: tus datos viven ' +
+          'solo en este dispositivo.</p>';
+      }
     }
 
     return '' +
@@ -223,7 +236,7 @@
 
     /* --- clics (delegación para todos los botones de la pantalla) --- */
     raiz.addEventListener("click", function (e) {
-      var boton = e.target.closest("[data-accion], [data-tema], #datos-exportar, #datos-importar, #datos-borrar, #sync-salir, #sync-activar");
+      var boton = e.target.closest("[data-accion], [data-tema], #datos-exportar, #datos-importar, #datos-borrar, #sync-salir, #sync-activar, #sync-reintentar");
       if (!boton) return;
 
       // --- sincronización ---
@@ -231,7 +244,18 @@
         if (window.confirm("¿Cerrar sesión? Los datos quedan guardados en la nube.")) App.cerrarSesion();
         return;
       }
-      if (boton.id === "sync-activar") { App.activarSync(); return; }
+      if (boton.id === "sync-reintentar") { window.location.reload(); return; }
+      if (boton.id === "sync-activar") {
+        // Aclaramos ANTES de recargar que esto no es un camino sin vuelta:
+        // si tocaste esto por error, en la pantalla siguiente podés volver
+        // a elegir "Seguir sin cuenta" y quedás exactamente como estabas.
+        var seguro = window.confirm(
+          "Esto va a pedirte iniciar sesión o crear una cuenta para sincronizar. " +
+          "Si te arrepentís, en esa pantalla podés tocar \"Seguir sin cuenta\" para volver a usar la app como hasta ahora, sin perder nada. ¿Continuar?"
+        );
+        if (seguro) App.activarSync();
+        return;
+      }
 
       // --- tema ---
       if (boton.hasAttribute("data-tema")) {

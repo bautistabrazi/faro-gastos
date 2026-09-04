@@ -33,11 +33,26 @@
    *   - la página NO se abrió como archivo local (file://)
    * ---------------------------------------------------------------- */
   function disponible() {
+    return diagnostico() === null;
+  }
+
+  /* ------------------------------------------------------------------
+   * diagnostico()
+   * Como disponible(), pero en vez de sí/no explica POR QUÉ no está
+   * disponible, en un código que la pantalla (Ajustes) traduce a un
+   * mensaje para la persona, sin exponer detalles técnicos:
+   *   "sin-config"   -> nunca se completó js/config.js (app puramente local)
+   *   "archivo-local"-> se abrió como archivo (file://), no como sitio web
+   *   "sin-libreria" -> config.js está pero la librería de Supabase no cargó
+   *                     (sin internet, CDN caído, etc.) — es TEMPORAL
+   *   null           -> todo bien, se puede usar la nube
+   * ---------------------------------------------------------------- */
+  function diagnostico() {
     var cfg = window.GASTOS_CONFIG || {};
-    if (!cfg.url || !cfg.anonKey) return false;
-    if (typeof window.supabase === "undefined" || !window.supabase.createClient) return false;
-    if (window.location.protocol === "file:") return false;
-    return true;
+    if (!cfg.url || !cfg.anonKey) return "sin-config";
+    if (window.location.protocol === "file:") return "archivo-local";
+    if (typeof window.supabase === "undefined" || !window.supabase.createClient) return "sin-libreria";
+    return null;
   }
 
   /* ------------------------------------------------------------------
@@ -98,6 +113,39 @@
   function iniciarSesion(email, password) {
     if (!cliente) return Promise.reject(new Error("La nube no está configurada."));
     return cliente.auth.signInWithPassword({ email: email, password: password }).then(function (r) {
+      if (r.error) throw new Error(traducirError(r.error.message));
+      return true;
+    });
+  }
+
+  /* ------------------------------------------------------------------
+   * enviarRecuperacion(email)
+   * Pide a Supabase que mande un mail con un enlace para elegir una
+   * contraseña nueva. El enlace vuelve a ESTA misma página; cuando se abre,
+   * Supabase establece una sesión especial de "recuperación" y dispara el
+   * evento PASSWORD_RECOVERY (ver alCambiarSesion, y _mostrarNuevaPassword
+   * en app.js). No hace falta que el email exista de verdad: por seguridad,
+   * Supabase resuelve igual aunque no exista (así nadie puede usar esto
+   * para adivinar qué emails están registrados).
+   * ---------------------------------------------------------------- */
+  function enviarRecuperacion(email) {
+    if (!cliente) return Promise.reject(new Error("La nube no está configurada."));
+    var volverA = window.location.origin + window.location.pathname;
+    return cliente.auth.resetPasswordForEmail(email, { redirectTo: volverA }).then(function (r) {
+      if (r.error) throw new Error(traducirError(r.error.message));
+      return true;
+    });
+  }
+
+  /* ------------------------------------------------------------------
+   * actualizarPassword(password)
+   * Cambia la contraseña de la cuenta ya logueada. Se usa tanto después de
+   * tocar el enlace de recuperación (sesión de recuperación) como si en el
+   * futuro se agrega un "cambiar contraseña" dentro de la app ya logueada.
+   * ---------------------------------------------------------------- */
+  function actualizarPassword(password) {
+    if (!cliente) return Promise.reject(new Error("La nube no está configurada."));
+    return cliente.auth.updateUser({ password: password }).then(function (r) {
       if (r.error) throw new Error(traducirError(r.error.message));
       return true;
     });
@@ -197,11 +245,14 @@
   /* ================================================================*/
   window.Gastos.Nube = {
     disponible: disponible,
+    diagnostico: diagnostico,
     iniciar: iniciar,
     sesion: sesion,
     emailActual: emailActual,
     registrarse: registrarse,
     iniciarSesion: iniciarSesion,
+    enviarRecuperacion: enviarRecuperacion,
+    actualizarPassword: actualizarPassword,
     salir: salir,
     alCambiarSesion: alCambiarSesion,
     cargar: cargar,
