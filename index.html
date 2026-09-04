@@ -24,20 +24,20 @@
        al abrir la app. Está en un archivo aparte (no inline) para poder tener
        un Content-Security-Policy estricto sin 'unsafe-inline' en script-src
        (ver vercel.json). -->
-  <script src="js/tema-inicial.js?v=11"></script>
+  <script src="js/tema-inicial.js?v=12"></script>
 
   <!-- Tipografías (Google Fonts). Si no hay internet, se usan las de respaldo
        definidas en base.css y la app funciona igual. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <!-- Estilos propios. ORDEN IMPORTA: base -> componentes -> layout.
-       El "?v=11" es un truco para forzar al navegador a recargar el CSS/JS
+       El "?v=12" es un truco para forzar al navegador a recargar el CSS/JS
        cuando lo editamos (subir el número). -->
-  <link rel="stylesheet" href="css/base.css?v=11" />
-  <link rel="stylesheet" href="css/componentes.css?v=11" />
-  <link rel="stylesheet" href="css/layout.css?v=11" />
+  <link rel="stylesheet" href="css/base.css?v=12" />
+  <link rel="stylesheet" href="css/componentes.css?v=12" />
+  <link rel="stylesheet" href="css/layout.css?v=12" />
 </head>
 
 <body>
@@ -89,21 +89,21 @@
          app                                 -> une todo y arranca
          registro-sw                         -> instala el Service Worker (PWA/offline)
   -->
-  <script src="js/config.js?v=11"></script>
+  <script src="js/config.js?v=12"></script>
   <!-- Cliente de Supabase (expone window.supabase.createClient). Si no hay
        internet o el CDN está bloqueado, la app igual funciona en modo local. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <script src="js/formato.js?v=11"></script>
-  <script src="js/nucleo.js?v=11"></script>
-  <script src="js/almacenamiento.js?v=11"></script>
-  <script src="js/tema.js?v=11"></script>
-  <script src="js/nube.js?v=11"></script>
-  <script src="js/vista-gastos.js?v=11"></script>
-  <script src="js/vista-ingresos.js?v=11"></script>
-  <script src="js/vista-proyeccion.js?v=11"></script>
-  <script src="js/vista-ajustes.js?v=11"></script>
-  <script src="js/app.js?v=11"></script>
-  <script src="js/registro-sw.js?v=11"></script>
+  <script src="js/formato.js?v=12"></script>
+  <script src="js/nucleo.js?v=12"></script>
+  <script src="js/almacenamiento.js?v=12"></script>
+  <script src="js/tema.js?v=12"></script>
+  <script src="js/nube.js?v=12"></script>
+  <script src="js/vista-gastos.js?v=12"></script>
+  <script src="js/vista-ingresos.js?v=12"></script>
+  <script src="js/vista-proyeccion.js?v=12"></script>
+  <script src="js/vista-ajustes.js?v=12"></script>
+  <script src="js/app.js?v=12"></script>
+  <script src="js/registro-sw.js?v=12"></script>
 </body>
 </html>

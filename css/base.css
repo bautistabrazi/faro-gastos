@@ -37,9 +37,12 @@
   --peligro:      #C13030;   /* borrar / errores */
   --peligro-tenue:#FAEAEA;
 
-  /* --- Tipografías --- */
-  --fuente-titulo: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
-  --fuente-texto:  "Hanken Grotesk", system-ui, "Segoe UI", Roboto, sans-serif;
+  /* --- Tipografías ---
+   * Título y texto usan la misma familia (Inter) pero quedan como variables
+   * separadas a propósito: si el día de mañana se quiere diferenciarlos de
+   * nuevo, se cambia acá y no hay que tocar el resto del CSS. */
+  --fuente-titulo: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  --fuente-texto:  "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
   --fuente-mono:   "IBM Plex Mono", "Consolas", ui-monospace, monospace;
 
   /* --- Escala de tamaños de texto --- */
