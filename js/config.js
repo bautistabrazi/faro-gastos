@@ -23,6 +23,6 @@
  * ==========================================================================*/
 
 window.GASTOS_CONFIG = {
-  url: "",
-  anonKey: "",
+  url: "https://uetalwmlkhvgqgnzotgz.supabase.co",
+  anonKey: "sb_publishable_zZZ4YSmGK4gS1zv4168vdg_xxJj5jOf",
 };
