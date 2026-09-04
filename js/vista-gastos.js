@@ -134,6 +134,16 @@
         '<div class="campo" id="campo-cuotas" hidden>' +
           '<label class="campo__etiqueta" for="gasto-cuotas">Cantidad de cuotas</label>' +
           '<input type="number" id="gasto-cuotas" min="1" max="120" step="1" value="12" />' +
+          // Atajo para cargar algo que ya se venía pagando ANTES de empezar a
+          // usar Faro (ej. "hoy instalo la app pero ya pagué 3 cuotas"). Solo
+          // tiene sentido al agregar; cargarEnFormulario() lo esconde al
+          // editar (ahí la fecha real ya está fijada y esto confundiría).
+          '<div class="campo" id="campo-pagadas">' +
+            '<label class="campo__etiqueta" for="gasto-pagadas">¿Ya pagaste alguna? (opcional)</label>' +
+            '<input type="number" id="gasto-pagadas" min="0" max="119" step="1" value="0" />' +
+            '<span class="campo__ayuda">Si la venías pagando antes de usar Faro, poné cuántas cuotas ' +
+              'ya pagaste y calculamos la fecha de compra sola.</span>' +
+          '</div>' +
           // al editar un gasto en cuotas, acá se muestra cuánto llevás pagado
           '<p class="campo__progreso" id="gasto-progreso" hidden></p>' +
         '</div>' +
@@ -288,6 +298,7 @@
       actualizarAyuda(contenedor);
     });
     inputCuotas.addEventListener("input", function () { actualizarAyuda(contenedor); });
+    contenedor.querySelector("#gasto-pagadas").addEventListener("input", function () { actualizarAyuda(contenedor); });
 
     // --- cancelar edición ---
     contenedor.querySelector("#gasto-cancelar").addEventListener("click", function () {
@@ -334,9 +345,21 @@
     var moneda = monedaElegida(contenedor);
 
     if (isFinite(monto) && monto > 0 && isFinite(cuotas) && cuotas > 0) {
-      ayuda.innerHTML = "= " +
+      var texto = "= " +
         '<span class="monto">' + F.moneda(monto * cuotas, moneda) + "</span>" +
         " en total (" + cuotas + " cuotas)";
+
+      // Si se cargó "¿Ya pagaste alguna?" (solo existe al agregar, no al
+      // editar), mostramos en qué cuota arrancaría, para confirmar antes de
+      // guardar que la cuenta cierra como corresponde.
+      var inputPagadas = !editandoId && contenedor.querySelector("#gasto-pagadas");
+      var pagadas = inputPagadas ? parseInt(inputPagadas.value, 10) : 0;
+      if (isFinite(pagadas) && pagadas > 0) {
+        var proxima = Math.min(cuotas, pagadas + 1);
+        texto += " · arrancarías en la cuota " + proxima + " de " + cuotas;
+      }
+
+      ayuda.innerHTML = texto;
       ayuda.hidden = false;
     } else {
       ayuda.hidden = true;
@@ -385,6 +408,21 @@
     if (tipoActual === "cuotas") {
       var c = parseInt(contenedor.querySelector("#gasto-cuotas").value, 10);
       gasto.cuotas = isFinite(c) && c >= 1 ? c : 1;
+
+      // "¿Ya pagaste alguna?": si se cargó un número mayor a 0 (solo aplica
+      // al AGREGAR, nunca al editar un gasto que ya tiene su fecha fijada),
+      // recalculamos la fecha de compra para que el mes de hoy caiga en la
+      // cuota correcta, en vez de depender de que la persona sepa/recuerde
+      // la fecha exacta de la compra original.
+      if (!editandoId) {
+        var inputPagadas = contenedor.querySelector("#gasto-pagadas");
+        var pagadas = inputPagadas ? parseInt(inputPagadas.value, 10) : 0;
+        if (isFinite(pagadas) && pagadas > 0) {
+          pagadas = Math.min(pagadas, gasto.cuotas - 1); // nunca "pagadas" >= total
+          var iInicio = Nucleo.indiceMes(Nucleo.mesActual()) - pagadas;
+          gasto.fecha = Nucleo.mesDesdeIndice(iInicio) + "-01";
+        }
+      }
     }
     if (tipoActual === "fijo") {
       gasto.hasta = contenedor.querySelector("#gasto-hasta").value || null;
@@ -534,6 +572,11 @@
 
     if (g.tipo === "cuotas") contenedor.querySelector("#gasto-cuotas").value = g.cuotas || 1;
     if (g.tipo === "fijo") contenedor.querySelector("#gasto-hasta").value = g.hasta || "";
+
+    // "¿Ya pagaste alguna?" es un atajo solo para cargar un gasto nuevo; al
+    // editar, la fecha real ya está fijada y este campo solo confundiría
+    // (además de que recalcularía la fecha de nuevo si se llegara a usar).
+    contenedor.querySelector("#campo-pagadas").hidden = true;
 
     if (g.medioId) contenedor.querySelector("#gasto-medio").value = g.medioId;
     if (g.categoriaId) contenedor.querySelector("#gasto-categoria").value = g.categoriaId;

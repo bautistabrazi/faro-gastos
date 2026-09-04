@@ -24,9 +24,13 @@ dos maneras:
 2. En **Gastos** cargás lo que compraste. El registro muestra los **últimos 3**;
    "Ver los N gastos" abre la lista completa, y el buscador filtra sobre todos.
    Al **editar** un gasto en cuotas ves cuánto llevás pagado y cuánto falta.
+   Al **agregar** uno en cuotas, si ya la venías pagando antes de usar Faro,
+   completá "¿Ya pagaste alguna?" y la fecha de compra se calcula sola.
 3. En **Ingresos** cargás el sueldo y cualquier otra entrada de plata.
 4. En **Proyección** mirás lo que viene mes a mes:
-   - La tarjeta "Este mes" muestra **ingresos − gastos = te queda**.
+   - La tarjeta "Este mes" muestra **ingresos − gastos = te queda**, y cada
+     renglón de "Lo que viene" también muestra su propio "te queda"/"te
+     falta" (si hay ingresos cargados) para ese mes puntual.
    - Abajo, **"Cuotas pendientes"**: el total que te falta pagar sumando todas
      las cuotas (los gastos fijos no cuentan como deuda: se pueden cancelar).
    - La lista "Lo que viene" tiene un filtro de horizonte (**6 meses / 1 año /
@@ -358,8 +362,10 @@ la app se pueda instalar y usar hoy — la PWA ya cubre eso.
   separado. No hay cotización.
 - **La proyección no incluye** los gastos fijos sin fecha de fin para decidir
   *hasta dónde* llegar (serían infinitos), pero sí los muestra en cada mes.
-- **El "te queda" es solo del mes en curso.** No arrastra saldo de un mes a otro
-  ni descuenta cuotas de meses futuros: contesta "¿me alcanza este mes?", nada más.
+- **El "te queda"/"te falta" es de CADA mes por separado**, tanto en "Este
+  mes" como en cada renglón de "Lo que viene" (si hay ingresos cargados). No
+  arrastra saldo de un mes a otro: cada mes contesta "¿me alcanza ESE mes?",
+  de forma independiente — no es un acumulado ni un saldo corrido.
 - **No hay análisis ni gráficos** a propósito: es un registro, no un tablero.
 - **Responsive:** el layout se adapta a celular. La navegación pasa a una barra
   inferior por debajo de 620 px; los formularios se apilan en una columna por

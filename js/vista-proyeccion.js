@@ -231,12 +231,30 @@
     var abierta = !!abiertos[fila.mes];
 
     var subPartes = [];
+
+    // El neto (ingresos - gastos) de ESE mes, igual que en la tarjeta "Este
+    // mes" — pero solo si hay ingresos cargados: sin ingresos, "neto" sería
+    // siempre negativo por definición y no aportaría nada, solo alarmaría de
+    // más. Va primero en la línea, resaltado en rojo si el mes queda en rojo.
+    if (Nucleo.hayIngresos(estado)) {
+      var bal = Nucleo.balanceDeMes(estado, fila.mes);
+      var negativo = bal.ARS.neto < 0;
+      subPartes.push(
+        '<span class="proy-mes__neto' + (negativo ? ' proy-mes__neto--negativo' : '') + '">' +
+          (negativo ? "Te faltan " : "Te quedan ") + F.moneda(Math.abs(bal.ARS.neto), "ARS") +
+        '</span>'
+      );
+    }
     if (fila.totales.USD > 0) subPartes.push("+ " + F.moneda(fila.totales.USD, "USD"));
     if (fila.terminan > 0) {
       subPartes.push(fila.terminan + (fila.terminan === 1 ? " pago termina" : " pagos terminan"));
     }
+    // Nota: acá NO pasamos por F.escapar() porque, a diferencia de otros
+    // lugares de esta pantalla, ninguna de estas partes viene de texto
+    // escrito por la persona (son plantillas fijas + números formateados) —
+    // y una de ellas necesita quedar como HTML real (el <span> del neto).
     var sub = subPartes.length
-      ? '<div class="proy-mes__sub">' + F.escapar(subPartes.join("  ·  ")) + '</div>'
+      ? '<div class="proy-mes__sub">' + subPartes.join("  ·  ") + '</div>'
       : '';
 
     var extra = abierta

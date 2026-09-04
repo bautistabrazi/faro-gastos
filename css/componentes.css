@@ -588,6 +588,8 @@
   text-align: right;
   padding-bottom: var(--esp-3);
 }
+/* el neto (ingresos - gastos) de ese mes, dentro de .proy-mes__sub */
+.proy-mes__neto--negativo { color: var(--peligro); }
 
 /* lo que se despliega (sin animación a propósito: aparición instantánea para
  * que la pantalla no "salte" cada vez que abrís o cerrás un mes) */
