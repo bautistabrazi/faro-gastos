@@ -123,6 +123,28 @@
   box-shadow: 0 0 0 3px var(--acento-tenue);
 }
 
+/* Campos de fecha (type="date" / type="month").
+ * En iOS / Safari el control nativo trae un ancho intrínseco propio y NO se
+ * achica con "width: 100%", así que se sale de la tarjeta en el celular.
+ * Quitándole el estilo nativo (-webkit-appearance: none) y dejándolo con
+ * min-width: 0 se comporta como un input de texto normal y respeta el ancho
+ * del contenedor. Al sacar el estilo nativo hereda el mismo padding y fuente
+ * que los inputs de texto, así que la altura ya queda pareja con el resto. */
+.campo input[type="date"],
+.campo input[type="month"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* que el valor de la fecha no empuje el ancho del input en WebKit */
+.campo input[type="date"]::-webkit-date-and-time-value,
+.campo input[type="month"]::-webkit-date-and-time-value {
+  text-align: left;
+  min-width: 0;
+}
+
 /* ayuda debajo de un campo ("= $540.000 en total") */
 .campo__ayuda {
   font-size: var(--txt-xs);
@@ -581,15 +603,28 @@
 }
 .proy-mes__fila[aria-expanded="true"] .proy-mes__chevron { transform: rotate(90deg); }
 
-/* segunda línea chiquita bajo el renglón: dólares y/o "X pagos terminan" */
+/* resumen bajo el renglón del mes, en dos líneas para que no se mezcle el
+   balance en pesos con los datos de dólares / pagos que terminan */
 .proy-mes__sub {
+  padding: 2px 0 var(--esp-3);
+}
+/* línea 1: el neto en pesos del mes ("Te quedan $120.000") — el dato clave */
+.proy-mes__balance {
+  font-size: var(--txt-sm);
+  color: var(--grafito);
+}
+.proy-mes__balance .monto {
+  font-weight: 600;
+  color: var(--tinta);
+}
+.proy-mes__balance--negativo,
+.proy-mes__balance--negativo .monto { color: var(--peligro); }
+/* línea 2: dólares y "X pagos terminan" — apoyo, chico y gris */
+.proy-mes__apunte {
   font-size: var(--txt-xs);
   color: var(--grafito);
-  text-align: right;
-  padding-bottom: var(--esp-3);
+  margin-top: 2px;
 }
-/* el neto (ingresos - gastos) de ese mes, dentro de .proy-mes__sub */
-.proy-mes__neto--negativo { color: var(--peligro); }
 
 /* lo que se despliega (sin animación a propósito: aparición instantánea para
  * que la pantalla no "salte" cada vez que abrís o cerrás un mes) */

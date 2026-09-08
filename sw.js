@@ -27,7 +27,7 @@
 
 "use strict";
 
-var CACHE_VERSION = "faro-v8";
+var CACHE_VERSION = "faro-v9";
 
 // Archivos que se guardan apenas se instala el Service Worker, para que la
 // app abra offline incluso la primera vez que se instala sin conexión previa.
@@ -36,22 +36,22 @@ var PRECARGA = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./js/tema-inicial.js?v=14",
-  "./js/vendor/supabase.js?v=14",
-  "./css/base.css?v=14",
-  "./css/componentes.css?v=14",
-  "./css/layout.css?v=14",
-  "./js/config.js?v=14",
-  "./js/formato.js?v=14",
-  "./js/nucleo.js?v=14",
-  "./js/almacenamiento.js?v=14",
-  "./js/tema.js?v=14",
-  "./js/nube.js?v=14",
-  "./js/vista-gastos.js?v=14",
-  "./js/vista-ingresos.js?v=14",
-  "./js/vista-proyeccion.js?v=14",
-  "./js/vista-ajustes.js?v=14",
-  "./js/app.js?v=14",
+  "./js/tema-inicial.js?v=15",
+  "./js/vendor/supabase.js?v=15",
+  "./css/base.css?v=15",
+  "./css/componentes.css?v=15",
+  "./css/layout.css?v=15",
+  "./js/config.js?v=15",
+  "./js/formato.js?v=15",
+  "./js/nucleo.js?v=15",
+  "./js/almacenamiento.js?v=15",
+  "./js/tema.js?v=15",
+  "./js/nube.js?v=15",
+  "./js/vista-gastos.js?v=15",
+  "./js/vista-ingresos.js?v=15",
+  "./js/vista-proyeccion.js?v=15",
+  "./js/vista-ajustes.js?v=15",
+  "./js/app.js?v=15",
   "./assets/icono.svg",
   "./assets/icono-192.png",
   "./assets/icono-512.png",
