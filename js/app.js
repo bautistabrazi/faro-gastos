@@ -78,6 +78,9 @@
           self.render();
         });
         this._pintarTemaToggle();
+        // Si el tema cambia por otro lado (Ajustes, o el sistema en modo
+        // "Automático"), tema.js avisa con este evento y actualizamos el ícono.
+        document.addEventListener("faro:tema", function () { self._pintarTemaToggle(); });
       }
 
       // 3. ¿Nube o modo local?
@@ -110,10 +113,18 @@
       });
     },
 
-    // Pone en el botón de tema el ícono del modo que se está viendo ahora.
+    // Pone en el botón de tema el ícono (SVG) del modo que se está viendo
+    // ahora: luna si está oscuro, sol si está claro. El texto para lectores
+    // de pantalla ya lo da el aria-label del botón (ver index.html).
     _pintarTemaToggle: function () {
       if (!this._temaToggle) return;
-      this._temaToggle.textContent = window.Gastos.Tema.esOscuroAhora() ? "☾" : "☀";
+      var I = window.Gastos.Iconos;
+      this._temaToggle.innerHTML = I.svg(window.Gastos.Tema.esOscuroAhora() ? "luna" : "sol", 18);
+    },
+
+    // El encabezado de las pantallas de login: isotipo + "Faro".
+    _marcaLoginHTML: function () {
+      return '<div class="login__marca"><span class="marca__iso" aria-hidden="true"></span>Faro</div>';
     },
 
     /* ------------------------------------------------------------------
@@ -136,7 +147,18 @@
       if (self._sesionActiva) return; // evitar hacerlo dos veces
       self._sesionActiva = true;
 
-      self._contenedor.innerHTML = '<p class="cargando">Sincronizando tus datos…</p>';
+      // Mientras llegan los datos mostramos "esqueletos" (bloques grises con
+      // un brillo) con la forma de la pantalla, en vez de un texto suelto.
+      // El texto sigue estando, oculto, para lectores de pantalla.
+      self._contenedor.innerHTML =
+        '<div class="cargando" role="status">' +
+          '<span class="sr-only">Sincronizando tus datos…</span>' +
+          '<div class="esqueleto esqueleto--titulo" aria-hidden="true"></div>' +
+          '<div class="esqueleto esqueleto--tarjeta" aria-hidden="true"></div>' +
+          '<div class="esqueleto esqueleto--fila" aria-hidden="true"></div>' +
+          '<div class="esqueleto esqueleto--fila" aria-hidden="true"></div>' +
+          '<div class="esqueleto esqueleto--fila" aria-hidden="true"></div>' +
+        '</div>';
 
       window.Gastos.Nube.cargar().then(function (r) {
         if (r.datos && tieneContenido(r.datos)) {
@@ -180,7 +202,7 @@
       // mismo formulario (email + contraseña) en los dos casos.
       this._contenedor.innerHTML =
         '<div class="login surge">' +
-          '<div class="login__marca">Faro</div>' +
+          this._marcaLoginHTML() +
           '<p class="login__bajada">' + (modo === "crear"
             ? "Creá una cuenta para sincronizar tus gastos entre el celular y la compu."
             : "Iniciá sesión para sincronizar tus gastos entre el celular y la compu.") +
@@ -288,7 +310,7 @@
 
       this._contenedor.innerHTML =
         '<div class="login surge">' +
-          '<div class="login__marca">Faro</div>' +
+          this._marcaLoginHTML() +
           '<p class="login__bajada">Te mandamos un enlace a tu email para elegir una contraseña nueva.</p>' +
           '<form id="recuperar-form" autocomplete="on">' +
             '<input type="email" id="recuperar-email" required placeholder="tu@email.com" ' +
@@ -347,7 +369,7 @@
 
       this._contenedor.innerHTML =
         '<div class="login surge">' +
-          '<div class="login__marca">Faro</div>' +
+          this._marcaLoginHTML() +
           '<p class="login__bajada">Elegí una contraseña nueva para tu cuenta.</p>' +
           '<form id="nueva-password-form" autocomplete="off">' +
             '<input type="password" id="nueva-password" required minlength="6" placeholder="Contraseña nueva" ' +
@@ -513,7 +535,8 @@
           String(titulo).replace(/"/g, "&quot;") + '">' +
           '<div class="modal__cabeza">' +
             '<h2 class="modal__titulo">' + titulo + '</h2>' +
-            '<button type="button" class="modal__cerrar" aria-label="Cerrar">✕</button>' +
+            '<button type="button" class="boton-icono modal__cerrar" aria-label="Cerrar">' +
+              window.Gastos.Iconos.svg("cerrar", 20) + '</button>' +
           '</div>' +
           '<div class="modal__cuerpo">' + htmlContenido + '</div>' +
         '</div>';

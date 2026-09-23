@@ -68,6 +68,69 @@
     },
 
     /* ----------------------------------------------------------------------
+     * monedaHTML(numero, codigo)
+     * Igual que moneda(), pero devuelve HTML para las CIFRAS GRANDES (la de
+     * "Este mes"): el signo "$" y los decimales van envueltos en spans para
+     * poder mostrarlos más chicos y apagados (ver .monto__signo y .monto__dec
+     * en base.css). Ej.: 184320.5 ->
+     *   <span class="monto__signo">$</span>184.320<span class="monto__dec">,50</span>
+     *
+     * Usar SOLO donde se inserta con innerHTML. Para texto plano (avisos,
+     * títulos, atributos) seguí usando moneda().
+     * Es seguro: todas las partes salen de Intl.NumberFormat (no hay texto
+     * escrito por la persona), igual las escapamos por las dudas.
+     * -------------------------------------------------------------------- */
+    monedaHTML: function (numero, codigo) {
+      var n = typeof numero === "number" && isFinite(numero) ? numero : 0;
+      var tieneDecimales = Math.round(n * 100) % 100 !== 0;
+      var fmt = formateador(codigo === "USD" ? "USD" : "ARS", tieneDecimales ? 2 : 0);
+
+      // Si el navegador es muy viejo y no sabe partir el número, devolvemos
+      // el texto plano (se ve igual, solo que sin los tamaños distintos).
+      if (typeof fmt.formatToParts !== "function") return Formato.escapar(fmt.format(n));
+
+      var menos = "";    // "−" si el número es negativo (va ANTES del "$")
+      var entero = "";   // dígitos + puntos de miles
+      var signo = "";    // "$" o "US$"
+      var decimales = ""; // ",50" (coma incluida)
+      fmt.formatToParts(n).forEach(function (p) {
+        if (p.type === "currency") signo = p.value;
+        else if (p.type === "decimal" || p.type === "fraction") decimales += p.value;
+        else if (p.type === "literal") { /* el espacio entre "$" y el número: lo da el CSS */ }
+        else if (p.type === "minusSign") menos = "−";   // signo menos tipográfico
+        else entero += p.value;                         // integer, group
+      });
+
+      return menos + '<span class="monto__signo">' + Formato.escapar(signo) + '</span>' +
+        Formato.escapar(entero) +
+        (decimales ? '<span class="monto__dec">' + Formato.escapar(decimales) + '</span>' : '');
+    },
+
+    /* ----------------------------------------------------------------------
+     * iniciales(texto)
+     * "Visa Santander" -> "VS" ; "Mercado Pago" -> "MP" ; "Efectivo" -> "EF".
+     * Para el "avatar" de cada fila de la lista. Devuelve texto plano (hay
+     * que escaparlo si se mete en HTML).
+     * -------------------------------------------------------------------- */
+    iniciales: function (texto) {
+      var palabras = String(texto == null ? "" : texto).trim().split(/\s+/).filter(Boolean);
+      if (palabras.length === 0) return "?";
+      if (palabras.length === 1) return palabras[0].slice(0, 2).toUpperCase();
+      return (palabras[0].charAt(0) + palabras[1].charAt(0)).toUpperCase();
+    },
+
+    /* ----------------------------------------------------------------------
+     * colorSeguro(color, respaldo)
+     * Devuelve el color solo si es un hex válido ("#4F46E5", "#abc"); si no,
+     * el respaldo. Se usa antes de meter un color guardado por la persona en
+     * un style="--cat:...", para que un respaldo importado con basura no
+     * pueda colar CSS raro.
+     * -------------------------------------------------------------------- */
+    colorSeguro: function (color, respaldo) {
+      return /^#[0-9a-f]{3,8}$/i.test(String(color || "")) ? color : respaldo;
+    },
+
+    /* ----------------------------------------------------------------------
      * numero(valor)
      * Formatea un número "pelado" con separador de miles ("45.000"), sin símbolo
      * de moneda. Útil para campos de edición y para totales sueltos.

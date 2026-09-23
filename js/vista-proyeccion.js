@@ -3,14 +3,17 @@
  * ----------------------------------------------------------------------------
  * PANTALLA "PROYECCIÓN" — cuánto tenés que pagar cada mes, de acá en adelante.
  *
- *   1) "Este mes"  -> una tarjeta arriba de todo. Si cargaste ingresos, muestra
- *      la cuenta del mes: entra − pagás = te queda. Si no, muestra solo lo que
- *      pagás este mes en grande. Es el ancla: dónde estás parado hoy.
+ *   1) "Este mes"  -> una tarjeta arriba de todo. Si cargaste ingresos, la
+ *      cifra grande es lo que TE QUEDA (entra − pagás), con una barra que
+ *      muestra qué parte de los ingresos se llevan los gastos. Si no hay
+ *      ingresos, la cifra grande es lo que pagás este mes. Es el ancla:
+ *      dónde estás parado hoy.
  *
  *   2) "Lo que viene" -> una lista tranquila, un renglón por mes futuro:
- *      mes ·············· total. Tocás un mes y se abre el desglose. Si el mes
- *      tiene muchos consumos, se muestra una preview y un botón para verlos
- *      todos en una ventana (modal).
+ *      mes · total, y debajo el neto del mes con una mini barra que compara
+ *      ese mes contra el más caro de la lista. Tocás un mes y se abre el
+ *      desglose. Si el mes tiene muchos consumos, se muestra una preview y
+ *      un botón para verlos todos en una ventana (modal).
  *
  * La lista llega hasta el último mes con cuotas o gastos fijos con fin. Los
  * fijos indefinidos aparecen en todos los meses pero no estiran la lista.
@@ -23,6 +26,7 @@
   window.Gastos.Vistas = window.Gastos.Vistas || {};
 
   var F = window.Gastos.Formato;
+  var I = window.Gastos.Iconos;
   var Nucleo = window.Gastos.Nucleo;
 
   // Cuántos consumos se muestran "inline" al abrir un mes antes de pasar a modal.
@@ -60,11 +64,12 @@
     if (!estado.gastos || estado.gastos.length === 0) {
       html +=
         '<div class="vacio">' +
+          '<span class="vacio__icono" aria-hidden="true">' + I.svg("tendencia", 26) + '</span>' +
           '<div class="vacio__titulo">Todavía no hay nada para proyectar</div>' +
           '<p>Cargá tu primer gasto y acá vas a ver, mes a mes, cuánto tenés que ' +
           'pagar y cuánto te queda.</p>' +
-          '<button type="button" class="boton boton--primario" data-ir-a="gastos" ' +
-            'style="margin-top:var(--esp-4);">Agregar mi primer gasto</button>' +
+          '<button type="button" class="boton boton--primario vacio__accion" data-ir-a="gastos">' +
+            'Agregar mi primer gasto</button>' +
         '</div></div>';
       contenedor.innerHTML = html;
       enganchar(contenedor);
@@ -90,8 +95,12 @@
         segmentoHorizonte() +
       '</div>';
 
+      // El mes más caro de lo que se muestra: es el 100% de las mini barras.
+      var maxTotal = 0;
+      futuros.forEach(function (f) { if (f.totales.ARS > maxTotal) maxTotal = f.totales.ARS; });
+
       html += '<div class="proy-lista">';
-      futuros.forEach(function (fila) { html += filaMes(estado, fila); });
+      futuros.forEach(function (fila) { html += filaMes(estado, fila, maxTotal); });
       html += '</div>';
 
       if (futuros.length < futurosTodos.length) {
@@ -141,23 +150,43 @@
     var hayIngresos = Nucleo.hayIngresos(estado);
     var bal = Nucleo.balanceDeMes(estado, fila.mes);
 
-    // --- cuerpo de números: con ingresos = la cuenta; sin ingresos = el total ---
+    // --- cuerpo de números ---
+    //   Con ingresos: la cifra grande es el NETO (lo que te queda o te falta),
+    //   y debajo una barra gastos/ingresos + la leyenda con los dos montos.
+    //   Sin ingresos: la cifra grande es el total que pagás este mes.
     var cuerpo;
     if (hayIngresos) {
-      var netoClase = bal.ARS.neto < 0 ? " ahora-neto--negativo" : " ahora-neto--positivo";
+      var negativo = bal.ARS.neto < 0;
+
+      // Qué porcentaje de los ingresos se llevan los gastos (tope 100 para
+      // la barra; el texto accesible sí dice el número real).
+      var pctReal = bal.ARS.ingresos > 0 ? Math.round(bal.ARS.gastos / bal.ARS.ingresos * 100) : 100;
+      var pctBarra = Math.min(100, Math.max(0, pctReal));
+      var textoBarra = bal.ARS.ingresos <= 0
+        ? "Este mes no tenés ingresos cargados"
+        : negativo
+          ? "Los gastos del mes superan tus ingresos (" + pctReal + "%)"
+          : "Los gastos del mes son el " + pctReal + "% de tus ingresos";
+
       cuerpo =
-        '<div class="ahora-cuenta">' +
-          '<div class="ahora-cuenta__linea"><span>Ingresos</span>' +
-            '<span class="monto">' + F.moneda(bal.ARS.ingresos, "ARS") + '</span></div>' +
-          '<div class="ahora-cuenta__linea"><span>Gastos del mes</span>' +
-            '<span class="monto">− ' + F.moneda(bal.ARS.gastos, "ARS") + '</span></div>' +
+        '<div class="ahora__cifra monto ' + (negativo ? 'ahora__cifra--negativo' : 'ahora__cifra--positivo') + '">' +
+          F.monedaHTML(Math.abs(bal.ARS.neto), "ARS") +
         '</div>' +
-        '<div class="ahora-neto' + netoClase + '">' +
-          '<span>' + (bal.ARS.neto < 0 ? 'Te falta' : 'Te queda') + '</span>' +
-          '<span class="monto">' + F.moneda(bal.ARS.neto, "ARS") + '</span>' +
+        '<p class="ahora__bajada">' +
+          (negativo ? 'te faltan para cubrir los gastos del mes' : 'te quedan después de pagar todo') +
+        '</p>' +
+        '<div class="barra' + (negativo ? ' barra--negativa' : '') + '" role="img" ' +
+          'aria-label="' + F.escapar(textoBarra) + '">' +
+          '<span class="barra__relleno" style="--pct:' + pctBarra + '"></span>' +
+        '</div>' +
+        '<div class="ahora__leyenda">' +
+          '<span>Gastos <span class="monto">' + F.moneda(bal.ARS.gastos, "ARS") + '</span></span>' +
+          '<span>Ingresos <span class="monto">' + F.moneda(bal.ARS.ingresos, "ARS") + '</span></span>' +
         '</div>';
     } else {
-      cuerpo = '<div class="ahora__cifra monto">' + F.moneda(fila.totales.ARS, "ARS") + '</div>';
+      cuerpo =
+        '<div class="ahora__cifra monto">' + F.monedaHTML(fila.totales.ARS, "ARS") + '</div>' +
+        '<p class="ahora__bajada">vas a pagar este mes</p>';
     }
 
     // --- línea de dólares (solo si hubo movimiento en USD este mes) ---
@@ -214,7 +243,9 @@
 
     return '' +
     '<article class="ahora">' +
-      '<div class="ahora__eyebrow">Este mes · ' + F.escapar(F.nombreMes(fila.mes)) + '</div>' +
+      // "Este mes  [septiembre 2026]" (la píldora la capitaliza el CSS)
+      '<div class="ahora__eyebrow">Este mes ' +
+        '<span class="ahora__mes">' + F.escapar(F.nombreMes(fila.mes)) + '</span></div>' +
       cuerpo +
       usd +
       '<div class="ahora__meta">' + meta + '</div>' +
@@ -227,42 +258,53 @@
   /* ==================================================================
    * UN RENGLÓN DE "LO QUE VIENE"
    * ================================================================*/
-  function filaMes(estado, fila) {
+  //   maxTotal: el total (ARS) del mes más caro de la lista; es el 100% de
+  //             la mini barra.
+  function filaMes(estado, fila, maxTotal) {
     var abierta = !!abiertos[fila.mes];
 
-    // El resumen del mes va en dos renglones para que no se mezcle lo que
-    // "te queda" (pesos) con los datos sueltos de dólares y pagos que terminan:
-    //   1) BALANCE  -> el neto en pesos, en grande. Es el número que importa.
-    //   2) APUNTE   -> dólares y "N pagos terminan", chico y gris, debajo.
+    // Debajo del renglón "mes · total" va una línea de resumen:
+    //   + $ neto   [===== mini barra =====]   [2 terminan]
+    // y, si hubo gastos en dólares, una línea chica más abajo.
+    // Todo son <span> (y no <div>) porque va DENTRO del botón del mes.
 
-    // 1) Balance en pesos. Solo si hay ingresos cargados: sin ingresos el neto
-    //    sería siempre negativo por definición y solo alarmaría de más.
-    var lineaBalance = "";
+    // 1) Neto en pesos, SIEMPRE con signo (+ te queda / − te falta). Solo si
+    //    hay ingresos cargados: sin ingresos el neto sería siempre negativo
+    //    por definición y solo alarmaría de más.
+    var negativo = false;
+    var neto = "";
     if (Nucleo.hayIngresos(estado)) {
       var bal = Nucleo.balanceDeMes(estado, fila.mes);
-      var negativo = bal.ARS.neto < 0;
-      lineaBalance =
-        '<div class="proy-mes__balance' + (negativo ? ' proy-mes__balance--negativo' : '') + '">' +
-          (negativo ? "Te faltan " : "Te quedan ") +
-          '<span class="monto">' + F.moneda(Math.abs(bal.ARS.neto), "ARS") + '</span>' +
-        '</div>';
+      negativo = bal.ARS.neto < 0;
+      neto =
+        '<span class="proy-mes__neto monto ' + (negativo ? 'proy-mes__neto--negativo' : 'proy-mes__neto--positivo') + '">' +
+          // el lector de pantalla escucha "Te quedan"/"Te faltan"; en pantalla se ve el signo
+          '<span class="sr-only">' + (negativo ? "Te faltan " : "Te quedan ") + '</span>' +
+          '<span aria-hidden="true">' + (negativo ? "− " : "+ ") + '</span>' +
+          F.moneda(Math.abs(bal.ARS.neto), "ARS") +
+        '</span>';
     }
 
-    // 2) Apunte: dólares del mes + cuántos pagos terminan.
-    var apunte = [];
-    if (fila.totales.USD > 0) apunte.push(F.moneda(fila.totales.USD, "USD") + " en gastos");
-    if (fila.terminan > 0) {
-      apunte.push(fila.terminan + (fila.terminan === 1 ? " pago termina" : " pagos terminan"));
-    }
-    var lineaApunte = apunte.length
-      ? '<div class="proy-mes__apunte">' + apunte.join(" · ") + '</div>'
+    // 2) Mini barra: el total de este mes en relación al mes más caro.
+    var pct = maxTotal > 0 ? Math.round(fila.totales.ARS / maxTotal * 100) : 0;
+    var barra =
+      '<span class="proy-mes__barra' + (negativo ? ' proy-mes__barra--negativa' : '') + '" aria-hidden="true">' +
+        '<span class="proy-mes__barra-relleno" style="--pct:' + pct + '"></span>' +
+      '</span>';
+
+    // 3) Chip ámbar: cuántos pagos se terminan este mes.
+    var chip = fila.terminan > 0
+      ? '<span class="proy-mes__chip">' + fila.terminan + (fila.terminan === 1 ? " termina" : " terminan") + '</span>'
+      : '';
+
+    // 4) Dólares del mes (apunte chico, en su propia línea).
+    var apunte = fila.totales.USD > 0
+      ? '<span class="proy-mes__apunte monto">' + F.moneda(fila.totales.USD, "USD") + ' en gastos</span>'
       : '';
 
     // Nota: acá NO pasamos por F.escapar() porque ninguna de estas partes viene
     // de texto escrito por la persona (son plantillas fijas + números).
-    var sub = (lineaBalance || lineaApunte)
-      ? '<div class="proy-mes__sub">' + lineaBalance + lineaApunte + '</div>'
-      : '';
+    var sub = '<span class="proy-mes__mini">' + neto + barra + chip + '</span>' + apunte;
 
     var extra = abierta
       ? '<div class="proy-mes__extra">' +
@@ -272,13 +314,13 @@
 
     return '' +
     '<div class="proy-mes" data-mes="' + F.escapar(fila.mes) + '">' +
+      // todo el bloque del mes es un solo botón: se toca en cualquier parte
       '<button type="button" class="proy-mes__fila" aria-expanded="' + abierta + '">' +
         '<span class="proy-mes__nombre">' + F.escapar(nombreMesRelativo(fila.mes)) + '</span>' +
-        '<span class="proy-mes__puntos"></span>' +
         '<span class="proy-mes__cifra monto">' + F.moneda(fila.totales.ARS, "ARS") + '</span>' +
-        '<span class="proy-mes__chevron" aria-hidden="true">›</span>' +
+        '<span class="proy-mes__chevron" aria-hidden="true">' + I.svg("chevronDerecha", 16) + '</span>' +
+        sub +
       '</button>' +
-      sub +
       extra +
     '</div>';
   }

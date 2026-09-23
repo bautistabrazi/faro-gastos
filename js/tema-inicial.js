@@ -6,6 +6,11 @@
  * navegador (meta theme-color), para que no haya un "parpadeo" de color al
  * abrir la app.
  *
+ * IMPORTANTE: acá se resuelve también el "auto" (se mira la preferencia del
+ * sistema) y SIEMPRE se deja puesto data-theme="light" o data-theme="dark".
+ * Así base.css necesita una sola definición del tema oscuro, sin duplicarla
+ * en un @media (prefers-color-scheme).
+ *
  * Está en un archivo aparte (y no inline en index.html) a propósito: así el
  * Content-Security-Policy de vercel.json puede exigir que TODO el JavaScript
  * venga de un archivo con script-src 'self', sin tener que permitir
@@ -15,15 +20,35 @@
 (function () {
   "use strict";
 
-  try {
-    var elegido = localStorage.getItem("gastos-tema"); // puede ser null
-    var oscuro = elegido === "oscuro" ||
-      (elegido !== "claro" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  // Color de fondo de cada tema (tiene que coincidir con --fondo de base.css).
+  // Acá se escribe fijo porque este script corre ANTES de que cargue el CSS,
+  // así que todavía no se puede leer la variable. Después, js/tema.js ya lo
+  // lee directo del CSS con getComputedStyle.
+  var FONDO_CLARO = "#F6F7FB";
+  var FONDO_OSCURO = "#0E0F16";
 
-    if (elegido === "claro") document.documentElement.setAttribute("data-theme", "light");
-    else if (elegido === "oscuro") document.documentElement.setAttribute("data-theme", "dark");
-    // si es "auto" o null: no tocamos data-theme y manda el sistema operativo
+  // ¿El sistema operativo está en modo oscuro? (false si no se puede saber)
+  function sistemaOscuro() {
+    try {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    } catch (e) {
+      return false;
+    }
+  }
 
-    if (oscuro) document.querySelector('meta[name="theme-color"]').setAttribute("content", "#141317");
-  } catch (e) { /* localStorage bloqueado: seguimos con el tema del sistema */ }
+  // Lo que eligió la persona en Ajustes (null si nunca eligió o si el
+  // navegador bloquea localStorage).
+  var elegido = null;
+  try { elegido = localStorage.getItem("gastos-tema"); } catch (e) { /* seguimos con "auto" */ }
+
+  // Resolvemos: "oscuro" fuerza oscuro, "claro" fuerza claro, cualquier otra
+  // cosa ("auto" o null) sigue al sistema.
+  var oscuro = elegido === "oscuro" || (elegido !== "claro" && sistemaOscuro());
+
+  // Siempre dejamos el atributo puesto (claro u oscuro, nunca vacío).
+  document.documentElement.setAttribute("data-theme", oscuro ? "dark" : "light");
+
+  // Color de la barra del navegador en el celular.
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", oscuro ? FONDO_OSCURO : FONDO_CLARO);
 })();

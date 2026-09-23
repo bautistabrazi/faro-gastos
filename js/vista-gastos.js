@@ -5,7 +5,7 @@
  *
  *   1) Alta rápida (arriba): un formulario chico para cargar un gasto en
  *      segundos. Solo "qué" y "cuánto" están a la vista; el resto (fecha,
- *      moneda, tarjeta, categoría) está plegado detrás de "más ▾".
+ *      moneda, tarjeta, categoría) está plegado detrás de "Más opciones".
  *
  *   2) La lista (abajo): todos los gastos cargados, del más nuevo al más viejo,
  *      con botones Editar y Borrar en cada uno.
@@ -23,6 +23,7 @@
   window.Gastos.Vistas = window.Gastos.Vistas || {};
 
   var F = window.Gastos.Formato;
+  var I = window.Gastos.Iconos;
   var Nucleo = window.Gastos.Nucleo;
   var Almacenamiento = window.Gastos.Almacenamiento;
 
@@ -35,6 +36,7 @@
   var avanzadoAbierto = false; // ¿está desplegado el panel "más"?
   var filtroTexto = "";        // lo escrito en el buscador del registro
   var registroExpandido = false; // ¿se están mostrando TODOS los gastos, o solo los últimos 3?
+  var recienAgregadoId = null; // id del gasto recién agregado (para el "destello" de su fila)
 
   var TOPE_REGISTRO = 3;       // cuántos gastos se ven antes de "Ver todos"
 
@@ -62,9 +64,14 @@
 
     contenedor.innerHTML =
       '<div class="vista-raiz' + anim + '">' +
+        '<h1 class="pantalla__titulo">Gastos</h1>' +
         plantillaAlta(estado) +
         plantillaLista(estado) +
       '</div>';
+
+    // El destello de la fila nueva se muestra UNA sola vez: en el próximo
+    // redibujado ya no se marca.
+    recienAgregadoId = null;
 
     engancharAlta(contenedor, estado);
     engancharLista(contenedor);
@@ -181,8 +188,12 @@
 
       // --- pie: "más" + botones ---
       '<div class="alta__pie">' +
-        '<button type="button" class="boton boton--fantasma" id="gasto-mas">más ▾</button>' +
-        '<div style="display:flex; gap:8px;">' +
+        // "Más opciones": el texto y aria-expanded los actualiza aplicarAvanzado()
+        '<button type="button" class="boton boton--fantasma boton-mas" id="gasto-mas" ' +
+          'aria-expanded="false" aria-controls="gasto-avanzado">' +
+          '<span class="boton-mas__texto">Más opciones</span>' + I.svg("chevronAbajo", 16) +
+        '</button>' +
+        '<div class="acciones">' +
           '<button type="button" class="boton boton--secundario" id="gasto-cancelar" hidden>Cancelar</button>' +
           '<button type="submit" class="boton boton--primario" id="gasto-enviar">Agregar gasto</button>' +
         '</div>' +
@@ -198,8 +209,9 @@
 
     if (gastos.length === 0) {
       return '' +
-      '<section style="margin-top:32px;">' +
+      '<section class="seccion">' +
         '<div class="vacio">' +
+          '<span class="vacio__icono" aria-hidden="true">' + I.svg("ticket", 26) + '</span>' +
           '<div class="vacio__titulo">Todavía no cargaste nada</div>' +
           '<p>Agregá tu primer gasto con el formulario de arriba.</p>' +
         '</div>' +
@@ -209,14 +221,19 @@
     var filas = gastos.map(function (g) { return filaGastoHTML(g, estado); }).join("");
 
     return '' +
-    '<section style="margin-top:32px;">' +
-      '<h2 class="pantalla__titulo" style="font-size:var(--txt-lg);">' +
-        'Registro <span class="monto" id="registro-cuenta" style="color:var(--grafito); font-size:var(--txt-sm);">' + gastos.length + '</span>' +
+    '<section class="seccion">' +
+      // el contador ("24" o "3 de 24") lo actualiza aplicarVistaRegistro()
+      '<h2 class="titulo-seccion">' +
+        'Registro <span class="contador" id="registro-cuenta">' + gastos.length + '</span>' +
       '</h2>' +
       '<p class="pantalla__bajada">Lo más nuevo primero. Se muestran los últimos ' +
         TOPE_REGISTRO + '; el resto está a un clic.</p>' +
-      '<input type="search" id="gasto-buscar" class="buscador" placeholder="Buscar en el registro…" ' +
-        'value="' + F.escapar(filtroTexto) + '" />' +
+      // buscador con una lupa adentro (la lupa es decorativa)
+      '<div class="buscador-caja">' +
+        I.svg("lupa", 18) +
+        '<input type="search" id="gasto-buscar" class="buscador" placeholder="Buscar en el registro…" ' +
+          'aria-label="Buscar en el registro" value="' + F.escapar(filtroTexto) + '" />' +
+      '</div>' +
       '<div class="gasto-lista">' + filas + '</div>' +
       '<button type="button" class="boton boton--fantasma lista-vermas" id="registro-vermas" hidden></button>' +
       '<p class="lista-sin-resultados" id="registro-sin-resultados" hidden>Nada coincide con la búsqueda.</p>' +
@@ -238,6 +255,16 @@
       : "";
 
     var editando = g.id === editandoId;
+    var nuevo = g.id === recienAgregadoId;
+
+    // Avatar: las iniciales del medio de pago, teñidas con su color (--cat).
+    // Sin medio de pago, las iniciales del gasto en un avatar neutro.
+    var avatar = medio
+      ? '<span class="gasto-item__avatar" aria-hidden="true" ' +
+          'style="--cat:' + F.escapar(F.colorSeguro(medio.color, "var(--acento)")) + '">' +
+          F.escapar(F.iniciales(medio.nombre)) + '</span>'
+      : '<span class="gasto-item__avatar gasto-item__avatar--neutro" aria-hidden="true">' +
+          F.escapar(F.iniciales(g.descripcion)) + '</span>';
 
     // texto por el que se puede buscar esta fila (descripción + medio + categoría)
     var buscable = (g.descripcion + " " +
@@ -245,16 +272,21 @@
       (categoria ? categoria.nombre : "")).toLowerCase();
 
     return '' +
-    '<div class="gasto-item' + (editando ? ' gasto-item--editando' : '') + '" data-id="' + F.escapar(g.id) + '" ' +
+    '<div class="gasto-item' + (editando ? ' gasto-item--editando' : '') + (nuevo ? ' gasto-item--nuevo' : '') +
+      '" data-id="' + F.escapar(g.id) + '" ' +
       'data-buscar="' + F.escapar(buscable) + '">' +
+      avatar +
       '<div class="gasto-item__cuerpo">' +
         '<div class="gasto-item__descripcion">' + F.escapar(g.descripcion) + chipMoneda + '</div>' +
         '<div class="gasto-item__meta">' + meta + '</div>' +
       '</div>' +
-      '<div class="gasto-item__monto">' + F.moneda(g.monto, g.moneda) + '</div>' +
+      '<div class="gasto-item__monto monto">' + F.moneda(g.monto, g.moneda) + '</div>' +
+      // botones solo-ícono: el aria-label dice qué hacen y sobre qué gasto
       '<div class="gasto-item__acciones">' +
-        '<button class="boton boton--mini" data-accion="editar" type="button">Editar</button>' +
-        '<button class="boton boton--mini boton--peligro" data-accion="borrar" type="button">Borrar</button>' +
+        '<button class="boton-icono" data-accion="editar" type="button" ' +
+          'aria-label="Editar ' + F.escapar(g.descripcion) + '" title="Editar">' + I.svg("lapiz", 18) + '</button>' +
+        '<button class="boton-icono boton-icono--peligro" data-accion="borrar" type="button" ' +
+          'aria-label="Borrar ' + F.escapar(g.descripcion) + '" title="Borrar">' + I.svg("papelera", 18) + '</button>' +
       '</div>' +
     '</div>';
   }
@@ -284,7 +316,7 @@
       if (op) marcarActivo(grupoMoneda, op);
     });
 
-    // --- toggle "más ▾" ---
+    // --- toggle "Más opciones" ---
     var botonMas = contenedor.querySelector("#gasto-mas");
     botonMas.addEventListener("click", function () {
       avanzadoAbierto = !avanzadoAbierto;
@@ -366,10 +398,13 @@
     }
   }
 
-  // Muestra u oculta el panel "más" y cambia el texto del botón.
+  // Muestra u oculta el panel "más" y actualiza el botón: su texto y
+  // aria-expanded (el CSS usa aria-expanded para girar la flechita).
   function aplicarAvanzado(contenedor) {
     contenedor.querySelector("#gasto-avanzado").hidden = !avanzadoAbierto;
-    contenedor.querySelector("#gasto-mas").textContent = avanzadoAbierto ? "menos ▴" : "más ▾";
+    var boton = contenedor.querySelector("#gasto-mas");
+    boton.setAttribute("aria-expanded", String(avanzadoAbierto));
+    boton.querySelector(".boton-mas__texto").textContent = avanzadoAbierto ? "Menos opciones" : "Más opciones";
   }
 
   /* ==================================================================
@@ -436,6 +471,7 @@
       App.aviso("Gasto actualizado", "ok");
     } else {
       estado.gastos.push(gasto);
+      recienAgregadoId = gasto.id; // para que su fila "destelle" al redibujar
       App.aviso("Gasto agregado", "ok");
     }
 

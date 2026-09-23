@@ -20,6 +20,7 @@
   window.Gastos.Vistas = window.Gastos.Vistas || {};
 
   var F = window.Gastos.Formato;
+  var I = window.Gastos.Iconos;
   var Almacenamiento = window.Gastos.Almacenamiento;
   var Tema = window.Gastos.Tema;
 
@@ -70,8 +71,13 @@
   function bloqueSync() {
     var info = window.Gastos.App.infoSync();
     var cuerpo;
+    // "Pastilla" de estado al lado del título: texto + variante de color.
+    var estadoTexto = "Solo este dispositivo";
+    var estadoClase = "";
 
     if (info.modo === "nube") {
+      estadoTexto = "Conectado";
+      estadoClase = " estado-sync--ok";
       cuerpo = '<p class="config-bloque__ayuda" id="sync-detalle">Sincronizando entre dispositivos…</p>' +
         '<div class="config-acciones">' +
           '<button class="boton boton--secundario" id="sync-salir" type="button">Cerrar sesión</button>' +
@@ -89,6 +95,8 @@
       // los dos casos para no confundir "nunca configurado" con "temporal".
       var razon = window.Gastos.Nube ? window.Gastos.Nube.diagnostico() : "sin-config";
       if (razon === "sin-libreria") {
+        estadoTexto = "Sin conexión";
+        estadoClase = " estado-sync--atencion";
         cuerpo = '<p class="config-bloque__ayuda">No se pudo conectar con la nube en este momento. ' +
           'Revisá tu conexión a internet.</p>' +
           '<div class="config-acciones">' +
@@ -102,7 +110,10 @@
 
     return '' +
     '<section class="config-bloque">' +
-      '<h2 class="config-bloque__titulo">Sincronización</h2>' +
+      '<div class="config-bloque__cabeza">' +
+        '<h2 class="config-bloque__titulo">Sincronización</h2>' +
+        '<span class="estado-sync' + estadoClase + '">' + estadoTexto + '</span>' +
+      '</div>' +
       cuerpo +
     '</section>';
   }
@@ -114,10 +125,11 @@
     var filas = estado.medios.map(function (m) {
       return '' +
       '<div class="chip-item" data-id="' + F.escapar(m.id) + '">' +
-        '<span class="chip-item__color" style="background:' + F.escapar(m.color) + '"></span>' +
+        // el puntito toma el color de la tarjeta vía la variable --cat
+        '<span class="chip-item__color" aria-hidden="true" ' +
+          'style="--cat:' + F.escapar(F.colorSeguro(m.color, "var(--acento)")) + '"></span>' +
         '<span class="chip-item__nombre">' + F.escapar(m.nombre) + '</span>' +
-        '<button class="boton boton--mini" data-accion="renombrar-medio" type="button">Renombrar</button>' +
-        '<button class="boton boton--mini boton--peligro" data-accion="borrar-medio" type="button">Borrar</button>' +
+        botonesFila("medio", m.nombre) +
       '</div>';
     }).join("");
 
@@ -128,14 +140,14 @@
       '<h2 class="config-bloque__titulo">Tarjetas y medios de pago</h2>' +
       '<p class="config-bloque__ayuda">Opcionales. Sirven para etiquetar cada gasto y ver la proyección por tarjeta.</p>' +
       '<div class="chip-lista">' + filas + '</div>' +
-      '<form class="campo-fila" id="form-medio" autocomplete="off" style="align-items:flex-end;">' +
-        '<div class="campo" style="margin-bottom:0;">' +
+      '<form class="campo-fila form-agregar" id="form-medio" autocomplete="off">' +
+        '<div class="campo campo--sin-margen">' +
           '<label class="campo__etiqueta" for="medio-nombre">Nueva tarjeta / medio</label>' +
           '<input type="text" id="medio-nombre" maxlength="40" placeholder="Ej: Visa Santander" />' +
         '</div>' +
-        '<div class="campo" style="margin-bottom:0; flex:0 0 auto; width:64px;">' +
+        '<div class="campo campo--sin-margen campo--color">' +
           '<label class="campo__etiqueta" for="medio-color">Color</label>' +
-          '<input type="color" id="medio-color" value="#4F46E5" style="height:42px; padding:2px;" />' +
+          '<input type="color" id="medio-color" class="input-color" value="#4F46E5" />' +
         '</div>' +
         '<button type="submit" class="boton boton--secundario">Agregar</button>' +
       '</form>' +
@@ -152,8 +164,7 @@
       return '' +
       '<div class="chip-item" data-id="' + F.escapar(c.id) + '">' +
         '<span class="chip-item__nombre">' + F.escapar(c.nombre) + '</span>' +
-        '<button class="boton boton--mini" data-accion="renombrar-cat-' + k + '" type="button">Renombrar</button>' +
-        '<button class="boton boton--mini boton--peligro" data-accion="borrar-cat-' + k + '" type="button">Borrar</button>' +
+        botonesFila("cat-" + k, c.nombre) +
       '</div>';
     }).join("");
 
@@ -164,14 +175,33 @@
       '<h2 class="config-bloque__titulo">' + F.escapar(opts.titulo) + '</h2>' +
       '<p class="config-bloque__ayuda">' + F.escapar(opts.ayuda) + '</p>' +
       '<div class="chip-lista">' + filas + '</div>' +
-      '<form class="campo-fila" data-form-cat="' + k + '" autocomplete="off" style="align-items:flex-end;">' +
-        '<div class="campo" style="margin-bottom:0;">' +
-          '<label class="campo__etiqueta">Nueva categoría</label>' +
-          '<input type="text" class="cat-nombre" maxlength="40" placeholder="' + F.escapar(opts.placeholder) + '" />' +
+      '<form class="campo-fila form-agregar" data-form-cat="' + k + '" autocomplete="off">' +
+        '<div class="campo campo--sin-margen">' +
+          '<label class="campo__etiqueta" for="cat-nombre-' + k + '">Nueva categoría</label>' +
+          '<input type="text" class="cat-nombre" id="cat-nombre-' + k + '" maxlength="40" ' +
+            'placeholder="' + F.escapar(opts.placeholder) + '" />' +
         '</div>' +
         '<button type="submit" class="boton boton--secundario">Agregar</button>' +
       '</form>' +
     '</section>';
+  }
+
+  /* ------------------------------------------------------------------
+   * botonesFila(tipo, nombre)
+   * Los dos botones solo-ícono de cada fila (Renombrar = lápiz, Borrar =
+   * papelera). "tipo" arma el data-accion que escucha enganchar():
+   *   "medio"          -> renombrar-medio / borrar-medio
+   *   "cat-gasto"      -> renombrar-cat-gasto / borrar-cat-gasto
+   *   "cat-ingreso"    -> renombrar-cat-ingreso / borrar-cat-ingreso
+   * El aria-label incluye el nombre, para que se entienda con lector de pantalla.
+   * ---------------------------------------------------------------- */
+  function botonesFila(tipo, nombre) {
+    var n = F.escapar(nombre);
+    return '' +
+      '<button class="boton-icono" data-accion="renombrar-' + tipo + '" type="button" ' +
+        'aria-label="Renombrar ' + n + '" title="Renombrar">' + I.svg("lapiz", 18) + '</button>' +
+      '<button class="boton-icono boton-icono--peligro" data-accion="borrar-' + tipo + '" type="button" ' +
+        'aria-label="Borrar ' + n + '" title="Borrar">' + I.svg("papelera", 18) + '</button>';
   }
 
   /* ==================================================================
@@ -190,7 +220,7 @@
       '<div class="config-acciones">' +
         '<button class="boton boton--secundario" id="datos-exportar" type="button">Exportar respaldo (.json)</button>' +
         '<button class="boton boton--secundario" id="datos-importar" type="button">Importar respaldo</button>' +
-        '<button class="boton boton--mini boton--peligro" id="datos-borrar" type="button">Borrar todo</button>' +
+        '<button class="boton boton--fantasma boton--peligro" id="datos-borrar" type="button">Borrar todo</button>' +
       '</div>' +
       '<input type="file" id="datos-archivo" accept="application/json,.json" hidden />' +
     '</section>';

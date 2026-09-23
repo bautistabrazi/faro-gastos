@@ -1,12 +1,13 @@
 /* ============================================================================
  * base.css
  * ----------------------------------------------------------------------------
- * La base de todo el diseño:
- *   1. Tokens  -> las variables de color, tipografía y espaciado. Si querés
- *                 cambiar "el look" de la app, casi siempre se toca acá.
- *   2. Tema claro / oscuro.
+ * La base de todo el diseño ("Calma y claridad"):
+ *   1. Tokens  -> las variables de color, tipografía, espaciado, radios,
+ *                 sombras y movimiento. Si querés cambiar "el look" de la app,
+ *                 casi siempre se toca acá.
+ *   2. Tema oscuro (una sola definición).
  *   3. Reset   -> emparejar el comportamiento por defecto de los navegadores.
- *   4. Tipografía base y elementos sueltos (body, links, etc.).
+ *   4. Tipografía base, montos y elementos sueltos (body, foco, etc.).
  *
  * Orden de carga de los CSS (ver index.html):
  *   base.css  ->  componentes.css  ->  layout.css
@@ -16,120 +17,129 @@
  * 1. TOKENS (tema claro, es el que vale por defecto)
  * ========================================================================*/
 :root {
-  /* --- Colores (tema claro) ---
-     Paleta fría lavanda/índigo: en vez del beige, las superficies tienen un
-     tinte suave del color de la app, así la página tiene algo de color sin
-     ser estridente. */
-  --papel:        #FCFCFE;   /* fondo general, casi blanco apenas frío */
-  --papel-2:      #F0F1FA;   /* superficie hundida (formularios, tarjetas) — lavanda suave */
-  --papel-3:      #E3E4F2;   /* bordes de tarjetas */
-  --tinta:        #1A1A24;   /* texto principal, casi negro apenas violáceo */
-  --grafito:      #66667A;   /* texto secundario, ayudas, fechas */
-  --linea:        #E7E8F2;   /* divisores y bordes finos */
+  /* --- Colores: superficies ---
+     Fondo neutro frío y superficies blancas "elevadas" con sombra suave. */
+  --fondo:          #F6F7FB;   /* fondo general de la página */
+  --superficie:     #FFFFFF;   /* tarjetas, listas, modal */
+  --superficie-2:   #F1F2F8;   /* zonas hundidas: inputs, track del segmentado, hover */
+  --borde:          #E4E6EF;   /* bordes de tarjetas y divisores */
+  --borde-control:  #D5D8E3;   /* borde de inputs y selects (un poco más marcado) */
 
-  --acento:       #4F46E5;   /* EL color de la app: índigo moderno */
-  --acento-tinta: #FFFFFF;   /* texto arriba del acento */
-  --acento-tenue: #EBEAFC;   /* fondo suave con el tono del acento */
+  /* --- Colores: texto --- */
+  --texto:          #14151F;   /* texto principal */
+  --texto-2:        #5B5F73;   /* texto secundario, etiquetas */
+  --texto-3:        #71758B;   /* texto terciario: ayudas, decimales, íconos apagados */
 
-  --atencion:      #B45309;  /* ámbar: solo para "esta cuota termina acá" */
-  --atencion-tenue:#FBEEDC;  /* fondo suave del ámbar */
-  --ok:           #2F7D5B;   /* verde esmeralda: confirmaciones, "te queda" */
-  --peligro:      #C13030;   /* borrar / errores */
-  --peligro-tenue:#FAEAEA;
+  /* --- Colores: acento (un solo color de marca, índigo) --- */
+  --acento:         #4F46E5;
+  --acento-hover:   #4338CA;   /* el acento al pasar el mouse */
+  --acento-tenue:   #EEF0FF;   /* fondo suave con el tono del acento */
+  --acento-tinta:   #FFFFFF;   /* texto arriba del acento */
 
-  /* --- Tipografías ---
-   * Título y texto usan la misma familia (Inter) pero quedan como variables
-   * separadas a propósito: si el día de mañana se quiere diferenciarlos de
-   * nuevo, se cambia acá y no hay que tocar el resto del CSS. */
-  --fuente-titulo: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
-  --fuente-texto:  "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
-  --fuente-mono:   "IBM Plex Mono", "Consolas", ui-monospace, monospace;
+  /* --- Colores: semántica --- */
+  --positivo:       #047857;   /* verde: "te queda", ingresos */
+  --positivo-tenue: #E7F6EF;
+  --negativo:       #C2323A;   /* rojo: "te falta", borrar, errores */
+  --negativo-tenue: #FDECEC;
+  --atencion:       #B45309;   /* ámbar: "esta cuota termina acá" */
+  --atencion-tenue: #FEF3E2;
+
+  /* velo oscuro detrás del modal */
+  --velo: rgb(14 15 22 / .5);
+
+  /* --- Tipografía: una sola familia (Inter) para todo --- */
+  --fuente: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
 
   /* --- Escala de tamaños de texto --- */
-  --txt-xs:  0.75rem;   /* 12px  ayudas, etiquetas de cuota */
-  --txt-sm:  0.875rem;  /* 14px  texto secundario */
-  --txt-md:  1rem;      /* 16px  texto base */
-  --txt-lg:  1.25rem;   /* 20px  subtítulos */
-  /* Los dos más grandes usan clamp() para achicarse solos en pantallas
-     angostas y que un monto largo ("$ 1.500.000") no desborde la tarjeta. */
-  --txt-xl:  clamp(1.4rem, 5.5vw, 1.75rem);   /* ~22–28px */
-  --txt-2xl: clamp(1.6rem, 7vw, 2.25rem);     /* ~26–36px  la cifra de "Este mes" */
+  --txt-2xs: 0.6875rem;  /* 11px  chips, texto de la nav del celular */
+  --txt-xs:  0.75rem;    /* 12px  ayudas chicas */
+  --txt-sm:  0.8125rem;  /* 13px  etiquetas, texto secundario */
+  --txt-md:  0.9375rem;  /* 15px  filas de listas */
+  --txt-base: 1rem;      /* 16px  texto base e inputs (16px evita el zoom de iOS) */
+  --txt-lg:  1.125rem;   /* 18px  subtítulos */
+  /* Los grandes usan clamp() para achicarse solos en pantallas angostas y
+     que un monto largo ("$ 1.500.000") no desborde la tarjeta. */
+  --txt-xl:   clamp(1.375rem, 5vw, 1.5rem);   /* ~22–24px  títulos de pantalla */
+  --txt-2xl:  clamp(1.75rem, 7vw, 2rem);      /* ~28–32px  */
+  --txt-hero: clamp(2.25rem, 10vw, 2.75rem);  /* ~36–44px  la cifra de "Este mes" */
 
-  /* --- Espaciado (múltiplos de 4px) --- */
+  /* --- Espaciado (base 4px) --- */
   --esp-1: 4px;
   --esp-2: 8px;
   --esp-3: 12px;
   --esp-4: 16px;
-  --esp-5: 24px;
-  --esp-6: 32px;
-  --esp-7: 48px;
+  --esp-5: 20px;
+  --esp-6: 24px;
+  --esp-7: 32px;
+  --esp-8: 48px;
+  --esp-9: 64px;
 
   /* --- Bordes redondeados --- */
-  --radio-sm: 6px;
-  --radio-md: 10px;
-  --radio-lg: 16px;
+  --radio-xs:   6px;
+  --radio-sm:   8px;
+  --radio-md:   12px;
+  --radio-lg:   16px;
+  --radio-xl:   20px;
+  --radio-full: 999px;
 
-  /* --- Sombra (muy sutil, "papel apoyado") --- */
-  --sombra: 0 1px 2px rgba(26, 26, 48, 0.05), 0 6px 20px rgba(26, 26, 48, 0.07);
+  /* --- Sombras (suaves, "superficie apoyada") --- */
+  --sombra-sm: 0 1px 2px rgb(20 21 31 / .05);
+  --sombra-md: 0 1px 2px rgb(20 21 31 / .04), 0 4px 12px rgb(20 21 31 / .06);
+  --sombra-lg: 0 8px 32px rgb(20 21 31 / .14);
+  /* anillo de foco de los controles (inputs, selects) */
+  --anillo: 0 0 0 3px color-mix(in srgb, var(--acento) 35%, transparent);
 
-  /* --- Ancho de la columna de contenido --- */
-  --ancho-columna: 600px;
+  /* --- Movimiento --- */
+  --dur-1: 120ms;   /* hover, cambios de color */
+  --dur-2: 200ms;   /* aparición de elementos chicos */
+  --dur-3: 320ms;   /* entradas de pantalla, modal */
+  --ease: cubic-bezier(.2, .7, .2, 1);
+
+  /* --- Medidas de la estructura --- */
+  --alto-nav: 64px;          /* alto de la barra de navegación del celular */
+  --ancho-columna: 600px;    /* ancho máximo de la columna de contenido */
 
   color-scheme: light;
 }
 
 /* ==========================================================================
  * 2. TEMA OSCURO
- * Se activa de dos formas:
- *   - Automático: el sistema operativo está en modo oscuro
- *     (@media prefers-color-scheme) y la persona NO forzó "claro".
- *   - Manual: se pone data-theme="dark" en <html> desde Ajustes.
- * Definimos SOLO los colores que cambian; lo demás se hereda de :root.
+ * Se activa con data-theme="dark" en <html>. Ese atributo lo pone SIEMPRE
+ * js/tema-inicial.js (al abrir) y js/tema.js (al cambiarlo), resolviendo la
+ * opción "Automático" contra la preferencia del sistema. Por eso alcanza con
+ * UNA sola definición acá (antes estaba duplicada en un @media).
+ * Definimos SOLO lo que cambia; lo demás se hereda de :root.
  * ========================================================================*/
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --papel:        #141317;
-    --papel-2:      #1D1C21;
-    --papel-3:      #2A2830;
-    --tinta:        #EDEAE2;
-    --grafito:      #98938A;
-    --linea:        #2E2C33;
-
-    --acento:       #8B97FF;
-    --acento-tinta: #16151A;
-    --acento-tenue: #2A2B46;
-
-    --atencion:      #E08A4E;
-    --atencion-tenue:#33261C;
-    --ok:           #5FBB8C;
-    --peligro:      #E5776B;
-    --peligro-tenue:#33211F;
-
-    --sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
-    color-scheme: dark;
-  }
-}
-
-/* Tema oscuro forzado desde Ajustes (gana siempre, esté como esté el sistema). */
 :root[data-theme="dark"] {
-  --papel:        #141317;
-  --papel-2:      #1D1C21;
-  --papel-3:      #2A2830;
-  --tinta:        #EDEAE2;
-  --grafito:      #98938A;
-  --linea:        #2E2C33;
+  --fondo:          #0E0F16;
+  --superficie:     #171924;
+  --superficie-2:   #1F2230;
+  --borde:          #2A2D3D;
+  --borde-control:  #363A4D;
 
-  --acento:       #8B97FF;
-  --acento-tinta: #16151A;
-  --acento-tenue: #2A2B46;
+  --texto:          #ECEDF5;
+  --texto-2:        #A3A7BC;
+  --texto-3:        #8A8EA5;
 
-  --atencion:      #E08A4E;
-  --atencion-tenue:#33261C;
-  --ok:           #5FBB8C;
-  --peligro:      #E5776B;
-  --peligro-tenue:#33211F;
+  --acento:         #8B93FF;
+  --acento-hover:   #A5ABFF;
+  --acento-tenue:   #25274A;
+  --acento-tinta:   #0E0F16;
 
-  --sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --positivo:       #34D399;
+  --positivo-tenue: #10281F;
+  --negativo:       #F87171;
+  --negativo-tenue: #341A1D;
+  --atencion:       #F5A454;
+  --atencion-tenue: #33261A;
+
+  --velo: rgb(0 0 0 / .6);
+
+  /* en oscuro las sombras casi no se ven: se reemplazan por un filo de luz */
+  --sombra-sm: 0 0 0 1px rgb(255 255 255 / .03);
+  --sombra-md: 0 0 0 1px rgb(255 255 255 / .04), 0 4px 16px rgb(0 0 0 / .4);
+  --sombra-lg: 0 12px 40px rgb(0 0 0 / .55);
+
   color-scheme: dark;
 }
 
@@ -178,34 +188,68 @@ button {
  * 4. TIPOGRAFÍA Y ELEMENTOS BASE
  * ========================================================================*/
 body {
-  font-family: var(--fuente-texto);
-  font-size: var(--txt-md);
+  font-family: var(--fuente);
+  font-size: var(--txt-base);
   line-height: 1.5;
-  color: var(--tinta);
-  background: var(--papel);
+  color: var(--texto);
+  background: var(--fondo);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3 {
-  font-family: var(--fuente-titulo);
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+/* Íconos SVG inline (los arma js/iconos.js): heredan el color del texto. */
+.icono {
+  flex-shrink: 0;
 }
 
 /* Clase utilitaria: cualquier número de plata lleva esta pinta.
-   "font-variant-numeric: tabular-nums" hace que todos los dígitos ocupen lo
-   mismo, así las columnas de montos quedan alineadas prolijas. */
+   "tabular-nums" hace que todos los dígitos ocupen lo mismo, así las
+   columnas de montos quedan alineadas prolijas (sin fuente monoespaciada). */
 .monto {
-  font-family: var(--fuente-mono);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
-/* Foco visible y consistente para quien navega con teclado. */
+/* En las cifras grandes (F.monedaHTML) el signo "$" y los decimales van más
+   chicos y apagados, para que se lea primero la parte entera. */
+.monto__signo {
+  font-size: .6em;
+  font-weight: 600;
+  color: var(--texto-2);
+  margin-right: .12em;
+  vertical-align: .32em;
+}
+.monto__dec {
+  font-size: .55em;
+  font-weight: 600;
+  color: var(--texto-3);
+}
+
+/* Texto solo para lectores de pantalla (invisible en pantalla). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Foco visible y consistente para quien navega con teclado. Sin forzar el
+   border-radius: así el contorno sigue la forma de cada elemento. */
 :focus-visible {
   outline: 2px solid var(--acento);
   outline-offset: 2px;
-  border-radius: var(--radio-sm);
 }
 
 /* Respetar a quien pidió menos animaciones en su sistema. */
@@ -214,6 +258,9 @@ h1, h2, h3 {
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

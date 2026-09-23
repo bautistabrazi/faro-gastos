@@ -7,9 +7,12 @@
  * localStorage ("gastos-tema"), porque es una preferencia del dispositivo, no
  * un dato para respaldar.
  *
- * OJO: el primer "pintado" del tema lo hace un script chiquito dentro de
- * index.html (para que no haya parpadeo). Este archivo se encarga del resto:
- * leer el valor actual y cambiarlo desde Ajustes.
+ * OJO: el primer "pintado" del tema lo hace js/tema-inicial.js (en <head>,
+ * para que no haya parpadeo). Este archivo se encarga del resto: leer el
+ * valor actual, cambiarlo desde Ajustes y seguir al sistema en "auto".
+ *
+ * Regla: data-theme en <html> SIEMPRE queda en "light" o "dark" (el "auto" se
+ * resuelve acá, en JS). Así el CSS tiene una sola definición del tema oscuro.
  * ==========================================================================*/
 
 (function () {
@@ -19,6 +22,9 @@
 
   var CLAVE = "gastos-tema";
   var VALIDOS = ["auto", "claro", "oscuro"];
+
+  // Consulta del sistema operativo: "¿está en modo oscuro?"
+  var consultaOscuro = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 
   /* leer() -> devuelve "auto" | "claro" | "oscuro" (nunca null) */
   function leer() {
@@ -30,33 +36,44 @@
     }
   }
 
-  /* aplicar(valor) -> lo guarda y lo refleja en el atributo data-theme de <html> */
-  function aplicar(valor) {
-    if (VALIDOS.indexOf(valor) === -1) valor = "auto";
+  /* resolverOscuro(valor) -> true si ese valor, hoy, se ve en oscuro.
+     "auto" se resuelve contra la preferencia del sistema. */
+  function resolverOscuro(valor) {
+    if (valor === "oscuro") return true;
+    if (valor === "claro") return false;
+    return !!(consultaOscuro && consultaOscuro.matches);
+  }
 
-    try { window.localStorage.setItem(CLAVE, valor); } catch (e) { /* sin problema */ }
-
+  /* pintar(valor) -> refleja el valor en <html data-theme> y en la barra del
+     navegador del celular, SIN guardarlo. */
+  function pintar(valor) {
     var html = document.documentElement;
-    if (valor === "claro") html.setAttribute("data-theme", "light");
-    else if (valor === "oscuro") html.setAttribute("data-theme", "dark");
-    else html.removeAttribute("data-theme"); // "auto" => manda el sistema
+    html.setAttribute("data-theme", resolverOscuro(valor) ? "dark" : "light");
 
-    // Actualizamos también el color de la barra del navegador en el celular.
+    // Color de la barra del navegador: lo leemos directo del CSS (variable
+    // --fondo), así si cambia la paleta no hay que acordarse de tocar acá.
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
-      var oscuro = valor === "oscuro" ||
-        (valor === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-      meta.setAttribute("content", oscuro ? "#141317" : "#FCFCFE");
+      var fondo = window.getComputedStyle(html).getPropertyValue("--fondo").trim();
+      if (fondo) meta.setAttribute("content", fondo);
     }
+
+    // Avisamos al resto de la app (p. ej. el botón sol/luna de la cabecera)
+    // que el tema cambió, por si tiene que actualizar su ícono.
+    document.dispatchEvent(new CustomEvent("faro:tema"));
+  }
+
+  /* aplicar(valor) -> lo guarda y lo refleja en pantalla */
+  function aplicar(valor) {
+    if (VALIDOS.indexOf(valor) === -1) valor = "auto";
+    try { window.localStorage.setItem(CLAVE, valor); } catch (e) { /* sin problema */ }
+    pintar(valor);
   }
 
   /* esOscuroAhora() -> true/false: qué se está viendo en este momento,
      resolviendo "auto" contra la preferencia del sistema. */
   function esOscuroAhora() {
-    var v = leer();
-    if (v === "oscuro") return true;
-    if (v === "claro") return false;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return resolverOscuro(leer());
   }
 
   /* alternar() -> cambia entre claro y oscuro de forma explícita (deja de ser
@@ -64,6 +81,19 @@
   function alternar() {
     aplicar(esOscuroAhora() ? "claro" : "oscuro");
   }
+
+  // En "auto", si el sistema cambia de claro a oscuro (o al revés) con la app
+  // abierta, la seguimos en vivo. (addListener es el nombre viejo, para Safari
+  // anteriores a la versión 14.)
+  if (consultaOscuro) {
+    var alCambiarSistema = function () { if (leer() === "auto") pintar("auto"); };
+    if (consultaOscuro.addEventListener) consultaOscuro.addEventListener("change", alCambiarSistema);
+    else if (consultaOscuro.addListener) consultaOscuro.addListener(alCambiarSistema);
+  }
+
+  // Al cargar el CSS ya se puede leer --fondo: repintamos una vez para que el
+  // meta theme-color quede con el valor exacto del CSS.
+  window.addEventListener("load", function () { pintar(leer()); });
 
   window.Gastos.Tema = {
     leer: leer,

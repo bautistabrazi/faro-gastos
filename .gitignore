@@ -11,6 +11,7 @@ desktop.ini
 _preview*.html
 _test*.html
 scratchpad/
+mockups pruebas/
 
 # NOTA: js/config.js SÍ se sube al repo. Guarda la URL de Supabase y la
 # "anon key", que es una clave pública (la protege el Row Level Security).

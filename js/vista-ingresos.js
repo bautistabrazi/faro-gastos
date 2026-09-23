@@ -20,6 +20,7 @@
   window.Gastos.Vistas = window.Gastos.Vistas || {};
 
   var F = window.Gastos.Formato;
+  var I = window.Gastos.Iconos;
   var Nucleo = window.Gastos.Nucleo;
   var Almacenamiento = window.Gastos.Almacenamiento;
 
@@ -27,6 +28,7 @@
   var editandoId = null;
   var tipoActual = "fijo";     // por defecto "fijo": lo más común es el sueldo
   var avanzadoAbierto = false;
+  var recienAgregadoId = null; // id del ingreso recién agregado (para el "destello" de su fila)
 
   /* ==================================================================
    * MONTAR
@@ -43,9 +45,13 @@
     var anim = ctx && ctx.primeraCarga ? " surge" : "";
     contenedor.innerHTML =
       '<div class="vista-raiz' + anim + '">' +
+        '<h1 class="pantalla__titulo">Ingresos</h1>' +
         plantillaAlta(estado) +
         plantillaLista(estado) +
       '</div>';
+
+    // el destello de la fila nueva se muestra una sola vez
+    recienAgregadoId = null;
 
     engancharAlta(contenedor, estado);
     engancharLista(contenedor);
@@ -122,8 +128,12 @@
       '</div>' +
 
       '<div class="alta__pie">' +
-        '<button type="button" class="boton boton--fantasma" id="ingreso-mas">más ▾</button>' +
-        '<div style="display:flex; gap:8px;">' +
+        // "Más opciones": el texto y aria-expanded los actualiza aplicarAvanzado()
+        '<button type="button" class="boton boton--fantasma boton-mas" id="ingreso-mas" ' +
+          'aria-expanded="false" aria-controls="ingreso-avanzado">' +
+          '<span class="boton-mas__texto">Más opciones</span>' + I.svg("chevronAbajo", 16) +
+        '</button>' +
+        '<div class="acciones">' +
           '<button type="button" class="boton boton--secundario" id="ingreso-cancelar" hidden>Cancelar</button>' +
           '<button type="submit" class="boton boton--primario" id="ingreso-enviar">Agregar ingreso</button>' +
         '</div>' +
@@ -139,8 +149,9 @@
 
     if (ingresos.length === 0) {
       return '' +
-      '<section style="margin-top:32px;">' +
+      '<section class="seccion">' +
         '<div class="vacio">' +
+          '<span class="vacio__icono" aria-hidden="true">' + I.svg("ingreso", 26) + '</span>' +
           '<div class="vacio__titulo">Todavía no cargaste ingresos</div>' +
           '<p>Agregá tu sueldo u otra entrada de plata con el formulario de arriba. ' +
           'Sirve para ver, en la Proyección, cuánto te queda cada mes.</p>' +
@@ -151,10 +162,11 @@
     var filas = ingresos.map(function (i) { return filaIngresoHTML(i, estado); }).join("");
 
     return '' +
-    '<section style="margin-top:32px;">' +
-      '<h2 class="pantalla__titulo" style="font-size:var(--txt-lg);">' +
-        'Ingresos <span class="monto" style="color:var(--grafito); font-size:var(--txt-sm);">' + ingresos.length + '</span>' +
+    '<section class="seccion">' +
+      '<h2 class="titulo-seccion">' +
+        'Registro <span class="contador">' + ingresos.length + '</span>' +
       '</h2>' +
+      '<p class="pantalla__bajada">Lo más nuevo primero.</p>' +
       '<div class="gasto-lista">' + filas + '</div>' +
     '</section>';
   }
@@ -170,17 +182,25 @@
       : "";
 
     var editando = ing.id === editandoId;
+    var nuevo = ing.id === recienAgregadoId;
 
     return '' +
-    '<div class="gasto-item' + (editando ? ' gasto-item--editando' : '') + '" data-id="' + F.escapar(ing.id) + '">' +
+    '<div class="gasto-item' + (editando ? ' gasto-item--editando' : '') + (nuevo ? ' gasto-item--nuevo' : '') +
+      '" data-id="' + F.escapar(ing.id) + '">' +
+      // avatar verde con las iniciales del ingreso (no tienen medio de pago)
+      '<span class="gasto-item__avatar gasto-item__avatar--ingreso" aria-hidden="true">' +
+        F.escapar(F.iniciales(ing.descripcion)) + '</span>' +
       '<div class="gasto-item__cuerpo">' +
         '<div class="gasto-item__descripcion">' + F.escapar(ing.descripcion) + chipMoneda + '</div>' +
         '<div class="gasto-item__meta">' + meta + '</div>' +
       '</div>' +
-      '<div class="gasto-item__monto gasto-item__monto--positivo">+ ' + F.moneda(ing.monto, ing.moneda) + '</div>' +
+      '<div class="gasto-item__monto gasto-item__monto--positivo monto">+ ' + F.moneda(ing.monto, ing.moneda) + '</div>' +
+      // botones solo-ícono: el aria-label dice qué hacen y sobre qué ingreso
       '<div class="gasto-item__acciones">' +
-        '<button class="boton boton--mini" data-accion="editar" type="button">Editar</button>' +
-        '<button class="boton boton--mini boton--peligro" data-accion="borrar" type="button">Borrar</button>' +
+        '<button class="boton-icono" data-accion="editar" type="button" ' +
+          'aria-label="Editar ' + F.escapar(ing.descripcion) + '" title="Editar">' + I.svg("lapiz", 18) + '</button>' +
+        '<button class="boton-icono boton-icono--peligro" data-accion="borrar" type="button" ' +
+          'aria-label="Borrar ' + F.escapar(ing.descripcion) + '" title="Borrar">' + I.svg("papelera", 18) + '</button>' +
       '</div>' +
     '</div>';
   }
@@ -236,9 +256,13 @@
     contenedor.querySelector("#ingreso-campo-hasta").hidden = tipoActual !== "fijo";
   }
 
+  // Muestra u oculta el panel "más" y actualiza el botón: su texto y
+  // aria-expanded (el CSS usa aria-expanded para girar la flechita).
   function aplicarAvanzado(contenedor) {
     contenedor.querySelector("#ingreso-avanzado").hidden = !avanzadoAbierto;
-    contenedor.querySelector("#ingreso-mas").textContent = avanzadoAbierto ? "menos ▴" : "más ▾";
+    var boton = contenedor.querySelector("#ingreso-mas");
+    boton.setAttribute("aria-expanded", String(avanzadoAbierto));
+    boton.querySelector(".boton-mas__texto").textContent = avanzadoAbierto ? "Menos opciones" : "Más opciones";
   }
 
   /* ==================================================================
@@ -281,6 +305,7 @@
       App.aviso("Ingreso actualizado", "ok");
     } else {
       estado.ingresos.push(ingreso);
+      recienAgregadoId = ingreso.id; // para que su fila "destelle" al redibujar
       App.aviso("Ingreso agregado", "ok");
     }
 

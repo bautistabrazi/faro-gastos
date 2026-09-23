@@ -3,20 +3,25 @@
  * ----------------------------------------------------------------------------
  * Las piezas reutilizables de la interfaz. Cada bloque está encabezado con un
  * comentario que dice para qué sirve y en qué pantalla se usa.
+ * Todos los valores salen de los tokens de base.css (colores, espacios,
+ * radios, sombras, duraciones): acá casi no hay números "sueltos".
  *
  * Índice:
- *   1.  Botones           .boton
+ *   1.  Botones           .boton, .boton-icono, .boton-mas
  *   2.  Tarjeta           .tarjeta
- *   3.  Formularios       .campo, .campo__etiqueta ...
+ *   3.  Formularios       .campo, .campo__etiqueta, inputs, selects
  *   4.  Segmentado        .segmentado  (el selector Único / Cuotas / Fijo)
  *   5.  Alta rápida       .alta        (el formulario de arriba en Gastos)
- *   6.  (libre)           — la "firma" con puntitos se movió a la sección 8
- *   7.  Lista de gastos   .gasto-item
+ *   6.  Secciones         .seccion, .titulo-seccion, .contador
+ *   7.  Lista de gastos   .gasto-lista, .gasto-item
  *   8.  Proyección        .ahora (tarjeta "Este mes"), .proy-mes, .proy-desglose
  *   9.  Ajustes           .config-bloque, .chip-item
  *   10. Aviso flotante    .aviso  (los mensajitos de "Gasto agregado")
  *   11. Estado vacío      .vacio
- *   12. Animación de entrada  .surge
+ *   12. Login y carga     .login, .cargando (esqueletos)
+ *   13. Animaciones       .surge, entrada escalonada, destello
+ *   14. Modal             .modal
+ *   15. Ajustes para celular
  * ==========================================================================*/
 
 /* ==========================================================================
@@ -27,62 +32,89 @@
   align-items: center;
   justify-content: center;
   gap: var(--esp-2);
-  font-family: var(--fuente-texto);
-  font-size: var(--txt-sm);
+  min-height: 44px;                 /* área táctil cómoda */
+  font-size: var(--txt-md);
   font-weight: 600;
-  padding: var(--esp-3) var(--esp-4);
+  line-height: 1.2;
+  padding: var(--esp-2) var(--esp-5);
   border-radius: var(--radio-md);
   border: 1px solid transparent;
-  transition: background-color 0.15s, border-color 0.15s, transform 0.05s;
+  transition: background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
 }
 
-.boton:active { transform: translateY(1px); }
+/* al apretar: se achica apenas, como un botón físico */
+.boton:active:not(:disabled) { transform: scale(.98); }
+
+/* deshabilitado (p. ej. "Entrando…" en el login) */
+.boton:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
 
 /* primario: la acción principal de cada pantalla (Agregar gasto, Guardar) */
 .boton--primario {
   background: var(--acento);
   color: var(--acento-tinta);
+  box-shadow: var(--sombra-sm);
 }
-.boton--primario:hover { background: color-mix(in srgb, var(--acento) 88%, black); }
+.boton--primario:hover:not(:disabled) { background: var(--acento-hover); }
 
-/* secundario: acciones de apoyo (Cancelar, Importar) */
+/* secundario: acciones de apoyo (Cancelar, Importar, Agregar en Ajustes) */
 .boton--secundario {
-  background: var(--papel-2);
-  border-color: var(--linea);
-  color: var(--tinta);
+  background: var(--superficie);
+  border-color: var(--borde-control);
+  color: var(--texto);
 }
-.boton--secundario:hover { background: var(--papel-3); }
+.boton--secundario:hover:not(:disabled) { background: var(--superficie-2); }
 
-/* fantasma: acciones terciarias, casi solo texto (más ▾, ver todos) */
+/* fantasma: acciones terciarias, casi solo texto (Más opciones, ver todos) */
 .boton--fantasma {
   background: transparent;
-  color: var(--grafito);
-  padding: var(--esp-2) var(--esp-3);
-  font-weight: 500;
+  color: var(--texto-2);
+  padding-left: var(--esp-3);
+  padding-right: var(--esp-3);
 }
-.boton--fantasma:hover { color: var(--tinta); background: var(--papel-2); }
+.boton--fantasma:hover:not(:disabled) { color: var(--texto); background: var(--superficie-2); }
 
-/* mini: los de cada fila de una lista (Editar, Borrar) */
-.boton--mini {
-  padding: var(--esp-1) var(--esp-2);
-  font-size: var(--txt-xs);
-  font-weight: 600;
-  border-radius: var(--radio-sm);
-  color: var(--grafito);
+/* peligro: "Borrar todo" (texto rojo, fondo rojo tenue al pasar el mouse) */
+.boton--peligro { color: var(--negativo); }
+.boton--peligro:hover:not(:disabled) { color: var(--negativo); background: var(--negativo-tenue); }
+
+/* Botón solo-ícono de 40x40 (Editar, Borrar, Cerrar). SIEMPRE lleva
+   aria-label, porque no tiene texto visible. */
+.boton-icono {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radio-md);
+  color: var(--texto-3);
+  transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
+    transform var(--dur-1) var(--ease);
 }
-.boton--mini:hover { color: var(--tinta); background: var(--papel-2); }
-.boton--peligro:hover { color: var(--peligro); background: var(--peligro-tenue); }
+.boton-icono:hover { color: var(--texto); background: var(--superficie-2); }
+.boton-icono:active { transform: scale(.94); }
+.boton-icono--peligro:hover { color: var(--negativo); background: var(--negativo-tenue); }
+
+/* "Más opciones" con la flechita que gira al abrir */
+.boton-mas .icono {
+  transition: transform var(--dur-2) var(--ease);
+}
+.boton-mas[aria-expanded="true"] .icono { transform: rotate(180deg); }
 
 /* ==========================================================================
  * 2. TARJETA
- * Contenedor con fondo de "papel" y borde suave. Base de la alta rápida y de
- * los bloques de Ajustes.
+ * Superficie blanca "elevada": borde fino + sombra suave. Base de la alta
+ * rápida, de los bloques de Ajustes y del login.
  * ========================================================================*/
 .tarjeta {
-  background: var(--papel-2);
-  border: 1px solid var(--papel-3);
-  border-radius: var(--radio-lg);
-  padding: var(--esp-5);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-xl);
+  box-shadow: var(--sombra-md);
+  padding: var(--esp-6);
 }
 
 /* ==========================================================================
@@ -93,34 +125,74 @@
   flex-direction: column;
   gap: var(--esp-2);
   margin-bottom: var(--esp-4);
+  min-width: 0;          /* que un hijo ancho (la fecha en iOS) no lo estire */
 }
 
+/* variante sin margen abajo (formularios en fila de Ajustes) */
+.campo--sin-margen { margin-bottom: 0; }
+
+/* etiqueta de cada campo: tranquila, sin mayúsculas */
 .campo__etiqueta {
-  font-size: var(--txt-xs);
-  font-weight: 600;
-  color: var(--grafito);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: var(--txt-sm);
+  font-weight: 500;
+  color: var(--texto-2);
 }
 
+/* Todos los controles de texto de la app comparten esta pinta:
+   48px de alto, fuente de 16px (evita el zoom automático de iOS),
+   fondo hundido y borde un poco más marcado que el de las tarjetas. */
 .campo__control,
 .campo input,
-.campo select {
+.campo select,
+.buscador,
+.login__input {
   width: 100%;
-  padding: var(--esp-3);
-  background: var(--papel);
-  border: 1px solid var(--linea);
+  min-height: 48px;
+  padding: var(--esp-3) 14px;
+  font-size: var(--txt-base);
+  background: var(--superficie-2);
+  border: 1px solid var(--borde-control);
   border-radius: var(--radio-md);
-  color: var(--tinta);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  color: var(--texto);
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease);
 }
 
+.campo__control::placeholder,
+.campo input::placeholder,
+.buscador::placeholder,
+.login__input::placeholder { color: var(--texto-3); }
+
+/* al pasar el mouse: el borde se tiñe apenas del acento */
+.campo__control:hover,
+.campo input:hover,
+.campo select:hover,
+.buscador:hover,
+.login__input:hover {
+  border-color: color-mix(in srgb, var(--acento) 45%, var(--borde-control));
+}
+
+/* con el foco: borde de acento + anillo suave alrededor */
 .campo input:focus,
 .campo select:focus,
-.campo__control:focus {
+.campo__control:focus,
+.buscador:focus,
+.login__input:focus {
   outline: none;
   border-color: var(--acento);
-  box-shadow: 0 0 0 3px var(--acento-tenue);
+  box-shadow: var(--anillo);
+  background: var(--superficie);
+}
+
+/* select con flechita propia (la nativa se ve distinta en cada navegador).
+   La flecha es un SVG en "data:" (permitido por el CSP: img-src data:). */
+.campo select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238A8EA5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
 }
 
 /* Campos de fecha (type="date" / type="month").
@@ -145,17 +217,22 @@
   min-width: 0;
 }
 
+/* selector de color (Ajustes > nueva tarjeta): mismo alto que los inputs */
+.campo input.input-color {
+  padding: var(--esp-1);
+  cursor: pointer;
+}
+
 /* ayuda debajo de un campo ("= $540.000 en total") */
 .campo__ayuda {
-  font-size: var(--txt-xs);
-  color: var(--grafito);
+  font-size: var(--txt-sm);
+  color: var(--texto-3);
 }
-.campo__ayuda .monto { font-size: var(--txt-xs); }
 
 /* al editar un gasto en cuotas: "Vas por la cuota 3 de 12 · pagaste..." */
 .campo__progreso {
-  font-size: var(--txt-xs);
-  color: var(--tinta);
+  font-size: var(--txt-sm);
+  color: var(--texto);
   background: var(--acento-tenue);
   border-radius: var(--radio-sm);
   padding: var(--esp-2) var(--esp-3);
@@ -171,31 +248,35 @@
 
 /* ==========================================================================
  * 4. SEGMENTADO  (Único / En cuotas / Fijo   ·   también Claro/Oscuro/Auto)
+ * Un "riel" hundido con la opción elegida levantada encima.
  * ========================================================================*/
 .segmentado {
   display: inline-flex;
   padding: 3px;
-  background: var(--papel-3);
+  background: var(--superficie-2);
   border-radius: var(--radio-md);
   gap: 2px;
 }
 
 .segmentado__opcion {
+  min-height: 40px;
   font-size: var(--txt-sm);
   font-weight: 600;
-  color: var(--grafito);
+  color: var(--texto-2);
   padding: var(--esp-2) var(--esp-4);
-  border-radius: 7px;
-  transition: background-color 0.15s, color 0.15s;
+  border-radius: var(--radio-sm);
+  transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
+    box-shadow var(--dur-1) var(--ease);
   white-space: nowrap;
 }
 
-.segmentado__opcion:hover { color: var(--tinta); }
+.segmentado__opcion:hover { color: var(--texto); }
 
+/* la opción elegida: superficie + sombra chiquita (parece "levantada") */
 .segmentado__opcion--activo {
-  background: var(--papel);
-  color: var(--acento);
-  box-shadow: var(--sombra);
+  background: var(--superficie);
+  color: var(--texto);
+  box-shadow: var(--sombra-sm), 0 0 0 1px var(--borde);
 }
 
 /* que ocupe todo el ancho cuando hace falta (en la alta rápida) */
@@ -204,19 +285,22 @@
 
 /* versión chica: para el filtro de horizonte de la Proyección */
 .segmentado--chico .segmentado__opcion {
+  min-height: 32px;
   font-size: var(--txt-xs);
-  padding: 4px var(--esp-2);
+  padding: var(--esp-1) 10px;
 }
 
 /* ==========================================================================
- * 5. ALTA RÁPIDA  (el formulario de arriba de la pantalla Gastos)
+ * 5. ALTA RÁPIDA  (el formulario de arriba de las pantallas Gastos/Ingresos)
  * La idea: los dos campos que siempre se usan (qué y cuánto) bien grandes
- * arriba; el resto plegado detrás de "más ▾".
+ * arriba; el resto plegado detrás de "Más opciones".
  * ========================================================================*/
-.alta { margin-bottom: var(--esp-6); }
+.alta { margin-bottom: var(--esp-7); }
 
 .alta__titulo {
-  font-size: var(--txt-lg);
+  font-size: var(--txt-base);
+  font-weight: 600;
+  letter-spacing: -0.01em;
   margin-bottom: var(--esp-4);
 }
 
@@ -230,20 +314,21 @@
 .alta__descripcion { flex: 1; }
 
 .alta__monto {
-  width: 8.5rem;
+  width: 9rem;
   flex-shrink: 0;
 }
-/* el input del monto se ve en mono, alineado a la derecha, como en un ticket */
+/* el input del monto: cifras tabulares, alineado a la derecha, como un ticket */
 .alta__monto input {
-  font-family: var(--fuente-mono);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
   text-align: right;
 }
 
 /* separador fino dentro de la tarjeta */
 .alta__division {
   height: 1px;
-  background: var(--linea);
+  background: var(--borde);
   margin: var(--esp-4) 0;
 }
 
@@ -261,59 +346,127 @@
   margin-top: var(--esp-4);
 }
 
-/* (La "firma" del proyecto —el renglón con puntitos que une un nombre con su
- * monto— vive ahora en la sección 8, PROYECCIÓN, que es donde se usa.) */
+/* grupo de botones (Cancelar + Agregar) */
+.acciones {
+  display: flex;
+  gap: var(--esp-2);
+}
+
+/* ==========================================================================
+ * 6. SECCIONES  (bloques debajo del formulario: "Registro", "Ingresos")
+ * ========================================================================*/
+.seccion { margin-top: var(--esp-7); }
+
+.titulo-seccion {
+  display: flex;
+  align-items: baseline;
+  gap: var(--esp-2);
+  font-size: var(--txt-base);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--esp-1);
+}
+
+/* "· 24": la cantidad de elementos al lado del título */
+.contador {
+  font-weight: 500;
+  color: var(--texto-3);
+  font-variant-numeric: tabular-nums;
+}
+.contador::before { content: "· "; }
 
 /* ==========================================================================
  * 7. LISTA DE GASTOS / INGRESOS  (el "registro" de abajo)
  * ========================================================================*/
 
-/* buscador del registro */
-.buscador {
-  width: 100%;
-  padding: var(--esp-3);
-  margin-bottom: var(--esp-2);
-  background: var(--papel);
-  border: 1px solid var(--linea);
-  border-radius: var(--radio-md);
-  color: var(--tinta);
+/* buscador del registro: input con una lupa adentro, a la izquierda */
+.buscador-caja {
+  position: relative;
+  margin-bottom: var(--esp-3);
 }
-.buscador:focus {
-  outline: none;
-  border-color: var(--acento);
-  box-shadow: 0 0 0 3px var(--acento-tenue);
+.buscador-caja .icono {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--texto-3);
+  pointer-events: none;   /* que el clic pase al input */
+}
+.buscador {
+  -webkit-appearance: none;   /* iOS le pone su propio estilo a type="search" */
+  appearance: none;
+  padding-left: 42px;         /* lugar para la lupa */
 }
 
 .lista-sin-resultados {
   font-size: var(--txt-sm);
-  color: var(--grafito);
+  color: var(--texto-2);
   padding: var(--esp-4) 0;
+  text-align: center;
 }
 
 /* botón "Ver los 9 gastos" / "Ver menos" debajo del registro */
 .lista-vermas {
-  display: block;
+  display: flex;
   width: 100%;
-  margin-top: var(--esp-3);
-  text-align: center;
+  margin-top: var(--esp-2);
 }
 
+/* La lista entera va agrupada en UNA tarjeta, con divisores finos */
 .gasto-lista {
   display: flex;
   flex-direction: column;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-sm);
+  overflow: hidden;
 }
+/* si el buscador ocultó todas las filas, no dejamos una tarjeta vacía */
+.gasto-lista:not(:has(.gasto-item:not([hidden]))) { display: none; }
 
 .gasto-item {
+  --cat: var(--acento);    /* color del avatar (lo pisa el medio de pago) */
   display: flex;
   align-items: center;
   gap: var(--esp-3);
-  padding: var(--esp-4) 0;
-  border-bottom: 1px solid var(--linea);
+  padding: var(--esp-3) var(--esp-4);
+  transition: background-color var(--dur-1) var(--ease);
 }
+/* divisor entre filas VISIBLES (el buscador oculta algunas con hidden; así
+   nunca queda una línea doble ni una línea suelta arriba de todo) */
+.gasto-item:not([hidden]) ~ .gasto-item { border-top: 1px solid var(--borde); }
+
+@media (hover: hover) {
+  .gasto-item:hover { background: var(--superficie-2); }
+}
+
+/* el "avatar": iniciales del medio de pago, teñidas con su color (--cat) */
+.gasto-item__avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radio-md);
+  font-size: var(--txt-sm);
+  font-weight: 700;
+  letter-spacing: 0;
+  background: color-mix(in srgb, var(--cat) 15%, var(--superficie));
+  color: color-mix(in srgb, var(--cat) 78%, var(--texto));
+}
+/* sin medio de pago: avatar neutro */
+.gasto-item__avatar--neutro {
+  background: var(--superficie-2);
+  color: var(--texto-2);
+}
+/* ingresos: avatar verde */
+.gasto-item__avatar--ingreso { --cat: var(--positivo); }
 
 .gasto-item__cuerpo { flex: 1; min-width: 0; }
 
 .gasto-item__descripcion {
+  font-size: var(--txt-md);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -321,55 +474,69 @@
 }
 
 .gasto-item__meta {
-  font-size: var(--txt-xs);
-  color: var(--grafito);
-  margin-top: 2px;
+  font-size: var(--txt-sm);
+  color: var(--texto-2);
+  margin-top: 1px;
+  overflow-wrap: anywhere;
 }
 
 /* el "chip" de moneda cuando es USD, para que salte a la vista */
 .gasto-item__moneda {
-  font-family: var(--fuente-mono);
-  font-size: 0.65rem;
-  font-weight: 700;
+  display: inline-block;
+  font-size: var(--txt-2xs);
+  font-weight: 600;
+  line-height: 1.4;
   color: var(--acento);
-  border: 1px solid var(--acento);
-  border-radius: 4px;
-  padding: 0 3px;
-  margin-left: var(--esp-2);
-  vertical-align: middle;
+  background: var(--acento-tenue);
+  border-radius: var(--radio-xs);
+  padding: 0 var(--esp-1);
+  margin-left: var(--esp-1);
+  vertical-align: 2px;
 }
 
 .gasto-item__monto {
-  font-family: var(--fuente-mono);
-  font-variant-numeric: tabular-nums;
+  font-size: var(--txt-md);
   font-weight: 600;
   text-align: right;
   flex-shrink: 0;
-  min-width: 6.5rem;   /* que la columna de montos quede pareja */
 }
 /* en la pantalla Ingresos, el monto va en verde con "+" */
-.gasto-item__monto--positivo { color: var(--ok); }
+.gasto-item__monto--positivo { color: var(--positivo); }
 
 .gasto-item__acciones {
   display: flex;
-  gap: var(--esp-1);
+  gap: 2px;
   flex-shrink: 0;
+  margin-right: calc(-1 * var(--esp-2)); /* los íconos "respiran" hasta el borde */
+}
+
+/* En compu con mouse: los botones Editar/Borrar aparecen al pasar por la
+   fila (o al llegar con el teclado). Siguen ocupando su lugar, así la fila
+   no "salta". */
+@media (hover: hover) and (pointer: fine) {
+  .gasto-item__acciones {
+    opacity: 0;
+    transition: opacity var(--dur-1) var(--ease);
+  }
+  .gasto-item:hover .gasto-item__acciones,
+  .gasto-item:focus-within .gasto-item__acciones,
+  .gasto-item--editando .gasto-item__acciones { opacity: 1; }
 }
 
 /* fila resaltada = la que se está editando ahora mismo */
-.gasto-item--editando {
+.gasto-item--editando,
+.gasto-item--editando:hover {
   background: var(--acento-tenue);
-  border-radius: var(--radio-sm);
-  margin: 0 calc(-1 * var(--esp-2));
-  padding-left: var(--esp-2);
-  padding-right: var(--esp-2);
 }
+
+/* fila recién agregada: un destello suave que se desvanece */
+.gasto-item--nuevo { animation: destello 1.4s var(--ease) both; }
 
 /* ==========================================================================
  * 8. PROYECCIÓN  (pantalla Proyección)
- * Dos partes:
- *   .ahora     -> la tarjeta "Este mes" (el ancla, el total en grande)
- *   .proy-mes  -> cada renglón de "Lo que viene" (mes · puntitos · total)
+ * Partes:
+ *   .ahora     -> la tarjeta "Este mes" (el ancla, el neto en grande)
+ *   .proy-mes  -> cada renglón de "Lo que viene" (mes · total · mini barra)
  *   .proy-desglose / .proy-linea -> el detalle que se abre al tocar un mes
  * ========================================================================*/
 
@@ -377,83 +544,101 @@
 .ahora {
   position: relative;
   overflow: hidden;
-  background: var(--papel-2);
-  border: 1px solid var(--papel-3);
-  border-top: 2px solid var(--acento);
-  border-radius: var(--radio-lg);
-  padding: var(--esp-5);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-xl);
+  box-shadow: var(--sombra-md);
+  padding: var(--esp-6);
   margin-bottom: var(--esp-6);
 }
 
-/* leve resplandor en una esquina: guiño al "faro". Muy sutil a propósito. */
-.ahora::after {
+/* resplandor en una esquina: guiño a la luz del "faro" */
+.ahora::before {
   content: "";
   position: absolute;
-  top: -40%;
-  right: -20%;
-  width: 60%;
-  height: 140%;
-  background: radial-gradient(closest-side, var(--acento), transparent);
-  opacity: 0.06;
+  top: -60%;
+  right: -30%;
+  width: 70%;
+  aspect-ratio: 1;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--acento) 16%, transparent), transparent);
   pointer-events: none;
 }
+/* el contenido va por encima del resplandor */
+.ahora > * { position: relative; }
 
+/* "Este mes  [Septiembre]" */
 .ahora__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+  font-size: var(--txt-sm);
+  font-weight: 500;
+  color: var(--texto-2);
+}
+.ahora__mes {
   font-size: var(--txt-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  padding: 2px var(--esp-2);
+  border-radius: var(--radio-full);
+  background: var(--acento-tenue);
   color: var(--acento);
-  margin-bottom: var(--esp-3);
+  text-transform: capitalize;
 }
 
+/* LA cifra: el neto del mes (o el total, si no hay ingresos cargados) */
 .ahora__cifra {
-  font-size: var(--txt-2xl);
-  font-weight: 600;
-  line-height: 1;
-  color: var(--tinta);
-}
-
-/* la cuenta del mes cuando hay ingresos: entra − pagás */
-.ahora-cuenta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--esp-1);
-  margin-bottom: var(--esp-3);
-}
-.ahora-cuenta__linea {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--esp-3);
-  font-size: var(--txt-sm);
-  color: var(--grafito);
-}
-.ahora-cuenta__linea .monto { color: var(--tinta); }
-
-/* el "te queda / te falta": el número que importa */
-.ahora-neto {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--esp-3);
-  padding-top: var(--esp-3);
-  border-top: 1px solid var(--linea);
-}
-.ahora-neto > span:first-child {
-  font-size: var(--txt-sm);
-  font-weight: 600;
-  color: var(--grafito);
-}
-.ahora-neto .monto {
-  font-size: var(--txt-xl);
+  font-size: var(--txt-hero);
   font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  color: var(--texto);
+  margin: var(--esp-3) 0 var(--esp-1);
+  overflow-wrap: anywhere;
 }
-.ahora-neto--positivo .monto { color: var(--ok); }
-.ahora-neto--negativo .monto { color: var(--peligro); }
+.ahora__cifra--positivo { color: var(--positivo); }
+.ahora__cifra--negativo { color: var(--negativo); }
+
+/* "te quedan después de pagar todo" */
+.ahora__bajada {
+  font-size: var(--txt-sm);
+  color: var(--texto-2);
+}
+
+/* barra gastos / ingresos. El ancho sale de --pct (0 a 100), que pone el JS. */
+.barra {
+  height: 8px;
+  border-radius: var(--radio-full);
+  background: var(--superficie-2);
+  margin: var(--esp-4) 0 var(--esp-2);
+  overflow: hidden;
+}
+.barra__relleno {
+  display: block;
+  height: 100%;
+  width: calc(var(--pct, 0) * 1%);
+  border-radius: inherit;
+  background: var(--acento);
+  transition: width var(--dur-3) var(--ease);
+}
+.barra--negativa .barra__relleno { background: var(--negativo); }
+
+/* "Gastos $X   Ingresos $Y" debajo de la barra */
+.ahora__leyenda {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--esp-1) var(--esp-3);
+  font-size: var(--txt-sm);
+  color: var(--texto-2);
+}
+.ahora__leyenda .monto {
+  color: var(--texto);
+  font-weight: 600;
+}
 
 .ahora__usd {
   font-size: var(--txt-sm);
-  color: var(--grafito);
+  color: var(--texto-2);
   margin-top: var(--esp-3);
 }
 
@@ -463,7 +648,7 @@
   flex-wrap: wrap;
   gap: var(--esp-2);
   font-size: var(--txt-sm);
-  color: var(--grafito);
+  color: var(--texto-2);
   margin-top: var(--esp-4);
 }
 
@@ -472,171 +657,203 @@
   width: 3px;
   height: 3px;
   border-radius: 50%;
-  background: var(--grafito);
-  opacity: 0.6;
+  background: var(--texto-3);
 }
 
 .ahora__pico {
   font-size: var(--txt-sm);
-  color: var(--grafito);
+  color: var(--texto-2);
   margin-top: var(--esp-3);
   padding-top: var(--esp-3);
-  border-top: 1px solid var(--linea);
+  border-top: 1px solid var(--borde);
 }
-.ahora__pico strong { color: var(--tinta); font-weight: 600; }
-.ahora__pico .monto { font-size: var(--txt-sm); }
+.ahora__pico strong { color: var(--texto); font-weight: 600; }
 
 .ahora__toggle {
-  margin-top: var(--esp-4);
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  margin-top: var(--esp-2);
   font-size: var(--txt-sm);
   font-weight: 600;
   color: var(--acento);
+  border-radius: var(--radio-sm);
 }
-.ahora__toggle:hover { text-decoration: underline; }
+.ahora__toggle:hover { color: var(--acento-hover); text-decoration: underline; }
 
 /* el desglose dentro de la tarjeta "Este mes" */
-.ahora .proy-desglose {
-  margin-top: var(--esp-4);
-}
+.ahora .proy-desglose { margin-top: var(--esp-2); }
 
 /* --- Sección "Lo que viene" --------------------------------------------- */
 .proy-seccion {
-  font-family: var(--fuente-texto);
-  font-size: var(--txt-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--grafito);
-  margin-bottom: var(--esp-2);
+  font-size: var(--txt-base);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--texto);
+  margin-bottom: var(--esp-3);
 }
 
-/* fila con el título "LO QUE VIENE" a la izquierda y el filtro a la derecha */
+/* fila con el título "Lo que viene" a la izquierda y el filtro a la derecha */
 .proy-seccion-fila {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--esp-3);
   flex-wrap: wrap;
-  margin-bottom: var(--esp-2);
+  margin-bottom: var(--esp-3);
 }
 .proy-seccion-fila .proy-seccion { margin-bottom: 0; }
 
-/* el número grande de "cuotas pendientes" (la deuda total) */
+/* el total de "cuotas pendientes" (la deuda), en una tarjeta chica */
 .proy-deuda {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--esp-3);
-  padding: var(--esp-3) var(--esp-4);
-  margin-bottom: var(--esp-5);
-  background: var(--papel-2);
-  border: 1px solid var(--papel-3);
-  border-radius: var(--radio-md);
+  padding: var(--esp-4);
+  margin-bottom: var(--esp-7);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-sm);
 }
 .proy-deuda__etiqueta {
   font-size: var(--txt-sm);
-  font-weight: 600;
-  color: var(--grafito);
+  font-weight: 500;
+  color: var(--texto-2);
 }
 .proy-deuda__monto {
-  font-family: var(--fuente-mono);
-  font-variant-numeric: tabular-nums;
   font-weight: 600;
-  color: var(--tinta);
+  color: var(--texto);
+  text-align: right;
 }
 
 .proy-nota-horizonte {
-  font-size: var(--txt-xs);
-  color: var(--grafito);
+  font-size: var(--txt-sm);
+  color: var(--texto-3);
   margin-top: var(--esp-3);
 }
 
+/* la lista de meses: una tarjeta con divisores */
 .proy-lista {
   display: flex;
   flex-direction: column;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-sm);
+  overflow: hidden;
 }
 
-.proy-mes { border-bottom: 1px solid var(--linea); }
+.proy-mes + .proy-mes { border-top: 1px solid var(--borde); }
 
-/* el renglón clickeable: mes ·············· total  ›
- * Todos los hijos son texto simple alineado por baseline, así los puntitos
- * (que son un borde inferior de un span vacío) caen justo sobre la línea de
- * base y nunca cruzan por el medio de las letras. */
+/* el renglón clickeable (todo el bloque del mes):
+ *   fila 1:  mes ............ total  (flecha)
+ *   fila 2:  + $ neto  [==== mini barra ====]  [2 terminan]
+ *   fila 3:  US$ 20 en gastos (si hay)                              */
 .proy-mes__fila {
   width: 100%;
-  display: flex;
-  align-items: baseline;
-  gap: var(--esp-3);
-  padding: var(--esp-4) 0 var(--esp-1);
+  display: grid;
+  grid-template-columns: 1fr auto 16px;
+  align-items: center;
+  gap: var(--esp-1) var(--esp-3);
+  padding: 14px var(--esp-4);
   text-align: left;
+  transition: background-color var(--dur-1) var(--ease);
 }
+@media (hover: hover) {
+  .proy-mes__fila:hover { background: var(--superficie-2); }
+}
+/* el foco con teclado va por dentro, así no lo recorta la tarjeta */
+.proy-mes__fila:focus-visible { outline-offset: -2px; }
 
 .proy-mes__nombre {
   font-size: var(--txt-md);
-  font-weight: 500;
-  color: var(--tinta);
-  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--texto);
   text-transform: capitalize;
-}
-
-/* los puntitos: la "firma" del proyecto. Solo en el nivel MES. */
-.proy-mes__puntos {
-  flex: 1 1 auto;
-  min-width: var(--esp-4);
-  border-bottom: 1px dotted var(--grafito);
-  opacity: 0.5;
-  transform: translateY(-0.28em);
+  min-width: 0;
 }
 
 .proy-mes__cifra {
-  flex-shrink: 0;
   font-size: var(--txt-md);
   font-weight: 600;
-  color: var(--tinta);
+  color: var(--texto);
+  text-align: right;
 }
 
 .proy-mes__chevron {
-  flex-shrink: 0;
-  color: var(--grafito);
-  font-size: var(--txt-md);
-  transition: transform 0.15s ease;
+  display: grid;
+  place-items: center;
+  color: var(--texto-3);
+  transition: transform var(--dur-2) var(--ease);
 }
 .proy-mes__fila[aria-expanded="true"] .proy-mes__chevron { transform: rotate(90deg); }
 
-/* resumen bajo el renglón del mes, en dos líneas para que no se mezcle el
-   balance en pesos con los datos de dólares / pagos que terminan */
-.proy-mes__sub {
-  padding: 2px 0 var(--esp-3);
-}
-/* línea 1: el neto en pesos del mes ("Te quedan $120.000") — el dato clave */
-.proy-mes__balance {
+/* fila 2: neto + mini barra + chip (ocupa todo el ancho de la grilla) */
+.proy-mes__mini {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: var(--txt-sm);
-  color: var(--grafito);
+  color: var(--texto-2);
 }
-.proy-mes__balance .monto {
+
+/* el neto del mes, siempre con signo: "+ $ 224.600" / "− $ 35.500" */
+.proy-mes__neto { font-weight: 600; flex-shrink: 0; }
+.proy-mes__neto--positivo { color: var(--positivo); }
+.proy-mes__neto--negativo { color: var(--negativo); }
+
+/* mini barra: el total de este mes comparado con el mes más caro de la
+   lista (--pct lo calcula el JS: total / máximo × 100) */
+.proy-mes__barra {
+  flex: 1;
+  min-width: var(--esp-7);
+  height: 4px;
+  border-radius: var(--radio-full);
+  background: var(--superficie-2);
+  overflow: hidden;
+}
+.proy-mes__barra-relleno {
+  display: block;
+  height: 100%;
+  width: calc(var(--pct, 0) * 1%);
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--acento) 70%, transparent);
+}
+.proy-mes__barra--negativa .proy-mes__barra-relleno { background: var(--negativo); }
+
+/* chip "2 terminan" en ámbar */
+.proy-mes__chip {
+  flex-shrink: 0;
+  font-size: var(--txt-2xs);
   font-weight: 600;
-  color: var(--tinta);
+  padding: 2px 7px;
+  border-radius: var(--radio-xs);
+  background: var(--atencion-tenue);
+  color: var(--atencion);
+  white-space: nowrap;
 }
-.proy-mes__balance--negativo,
-.proy-mes__balance--negativo .monto { color: var(--peligro); }
-/* línea 2: dólares y "X pagos terminan" — apoyo, chico y gris */
+
+/* fila 3: dólares del mes — apoyo, chico y gris */
 .proy-mes__apunte {
+  grid-column: 1 / -1;
   font-size: var(--txt-xs);
-  color: var(--grafito);
-  margin-top: 2px;
+  color: var(--texto-3);
 }
 
 /* lo que se despliega (sin animación a propósito: aparición instantánea para
  * que la pantalla no "salte" cada vez que abrís o cerrás un mes) */
 .proy-mes__extra {
-  padding-bottom: var(--esp-4);
+  padding: 0 var(--esp-4) var(--esp-4);
 }
 
 /* --- El desglose (consumos de un mes) ----------------------------------- */
 /* "El hilo": una línea fina neutra a la izquierda conecta el detalle con su
  * mes. Neutra (no de color) para que no maree. */
 .proy-desglose {
-  border-left: 2px solid var(--linea);
+  border-left: 2px solid var(--borde);
   padding-left: var(--esp-4);
   margin-left: var(--esp-1);
 }
@@ -646,14 +863,14 @@
   align-items: baseline;
   gap: var(--esp-2);
   padding: var(--esp-2) 0;
-  border-bottom: 1px solid var(--linea);
+  border-bottom: 1px solid var(--borde);
 }
 .proy-linea:last-child { border-bottom: none; }
 
 .proy-linea__nombre {
   flex: 1;
   min-width: 0;
-  color: var(--tinta);
+  color: var(--texto);
   font-size: var(--txt-sm);
   white-space: nowrap;
   overflow: hidden;
@@ -663,13 +880,13 @@
 /* la CUOTA: chip bien visible, es el dato que se busca al leer el resumen */
 .proy-linea__cuota {
   flex-shrink: 0;
-  font-family: var(--fuente-mono);
-  font-size: var(--txt-xs);
+  font-size: var(--txt-2xs);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
   color: var(--acento);
   background: var(--acento-tenue);
   padding: 2px 6px;
-  border-radius: 5px;
+  border-radius: var(--radio-xs);
   white-space: nowrap;
 }
 .proy-linea__cuota--fin {
@@ -680,40 +897,40 @@
 /* el "fijo": texto liviano, no necesita destacarse */
 .proy-linea__fijo {
   flex-shrink: 0;
-  font-family: var(--fuente-mono);
   font-size: var(--txt-xs);
-  color: var(--grafito);
+  color: var(--texto-3);
 }
 .proy-linea__fijo--fin { color: var(--atencion); }
 
 .proy-linea__medio {
-  font-family: var(--fuente-mono);
   font-size: var(--txt-xs);
-  color: var(--grafito);
+  color: var(--texto-3);
   margin-left: var(--esp-2);
 }
 
 .proy-linea__monto {
   flex-shrink: 0;
   font-size: var(--txt-sm);
-  color: var(--tinta);
+  font-weight: 500;
+  color: var(--texto);
   text-align: right;
 }
 
 .proy-vacio {
   font-size: var(--txt-sm);
-  color: var(--grafito);
+  color: var(--texto-2);
   padding: var(--esp-2) 0;
 }
 
 /* botón "+ N consumos más — ver todo" (abre el modal con la lista completa) */
 .proy-desglose__mas {
-  margin-top: var(--esp-2);
-  font-size: var(--txt-xs);
+  min-height: 40px;
+  margin-top: var(--esp-1);
+  font-size: var(--txt-sm);
   font-weight: 600;
   color: var(--acento);
 }
-.proy-desglose__mas:hover { text-decoration: underline; }
+.proy-desglose__mas:hover { color: var(--acento-hover); text-decoration: underline; }
 
 /* el mismo desglose pero dentro del modal: sin la línea lateral, más aire */
 .proy-desglose--modal {
@@ -725,48 +942,102 @@
 
 /* ==========================================================================
  * 9. AJUSTES
+ * Cada bloque es una tarjeta.
  * ========================================================================*/
 .config-bloque {
-  margin-bottom: var(--esp-6);
-}
-.config-bloque__titulo {
-  font-size: var(--txt-md);
-  font-weight: 700;
-  margin-bottom: var(--esp-1);
-}
-.config-bloque__ayuda {
-  font-size: var(--txt-sm);
-  color: var(--grafito);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-xl);
+  box-shadow: var(--sombra-md);
+  padding: var(--esp-6);
   margin-bottom: var(--esp-4);
 }
+
+/* título del bloque + (opcional) un estado a la derecha ("Conectado") */
+.config-bloque__cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  margin-bottom: var(--esp-1);
+}
+.config-bloque__titulo {
+  font-size: var(--txt-base);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.config-bloque__cabeza .config-bloque__titulo { margin-bottom: 0; }
+.config-bloque > .config-bloque__titulo { margin-bottom: var(--esp-1); }
+
+.config-bloque__ayuda {
+  font-size: var(--txt-sm);
+  color: var(--texto-2);
+  margin-bottom: var(--esp-4);
+}
+
+/* la "pastilla" de estado de la sincronización */
+.estado-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: var(--txt-xs);
+  font-weight: 600;
+  padding: 2px 10px 2px var(--esp-2);
+  border-radius: var(--radio-full);
+  background: var(--superficie-2);
+  color: var(--texto-2);
+}
+/* el puntito de color adelante del texto */
+.estado-sync::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.estado-sync--ok      { background: var(--positivo-tenue); color: var(--positivo); }
+.estado-sync--atencion { background: var(--atencion-tenue); color: var(--atencion); }
 
 /* lista de medios / categorías */
 .chip-lista {
   display: flex;
   flex-direction: column;
-  margin-bottom: var(--esp-3);
+  margin-bottom: var(--esp-4);
 }
 .chip-item {
   display: flex;
   align-items: center;
-  gap: var(--esp-3);
-  padding: var(--esp-3) 0;
-  border-bottom: 1px solid var(--linea);
+  gap: var(--esp-2);
+  min-height: 48px;
+  padding: var(--esp-1) 0;
 }
+.chip-item + .chip-item { border-top: 1px solid var(--borde); }
+
+/* el puntito con el color de la tarjeta (sale de --cat, que pone el JS) */
 .chip-item__color {
   width: 12px;
   height: 12px;
   border-radius: 50%;
   flex-shrink: 0;
+  background: var(--cat, var(--acento));
+  margin-right: var(--esp-1);
 }
-.chip-item__nombre { flex: 1; }
-.chip-item input[type="text"] {
+.chip-item__nombre {
   flex: 1;
-  padding: var(--esp-2) var(--esp-3);
-  background: var(--papel);
-  border: 1px solid var(--linea);
-  border-radius: var(--radio-sm);
-  color: var(--tinta);
+  min-width: 0;
+  font-size: var(--txt-md);
+  overflow-wrap: anywhere;
+}
+
+/* formulario "Nueva tarjeta / categoría": campos y botón alineados abajo */
+.form-agregar { align-items: flex-end; }
+.form-agregar .boton { min-height: 48px; }  /* mismo alto que los inputs */
+
+/* el campo del color es angosto (le gana al "flex: 1" de .campo-fila .campo) */
+.campo-fila .campo--color {
+  flex: 0 0 auto;
+  width: 72px;
 }
 
 .config-acciones {
@@ -781,83 +1052,110 @@
 .aviso {
   position: fixed;
   left: 50%;
-  bottom: var(--esp-6);
+  bottom: var(--esp-7);
   transform: translateX(-50%) translateY(0);
   z-index: 50;
-  background: var(--tinta);
-  color: var(--papel);
+  max-width: calc(100vw - 2 * var(--esp-4));
+  background: var(--texto);
+  color: var(--fondo);
   font-size: var(--txt-sm);
   font-weight: 600;
+  text-align: center;
   padding: var(--esp-3) var(--esp-5);
-  border-radius: 999px;
-  box-shadow: var(--sombra);
-  animation: aviso-entra 0.2s ease-out;
+  border-radius: var(--radio-full);
+  box-shadow: var(--sombra-lg);
+  animation: aviso-entra var(--dur-2) var(--ease);
 }
-.aviso--ok      { background: var(--ok); color: #fff; }
-.aviso--peligro { background: var(--peligro); color: #fff; }
+.aviso--ok      { background: var(--positivo); color: var(--acento-tinta); }
+.aviso--peligro { background: var(--negativo); color: var(--acento-tinta); }
 
 @keyframes aviso-entra {
   from { transform: translateX(-50%) translateY(12px); opacity: 0; }
   to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
 }
 
-/* en el celular el aviso sube un poco para no chocar con la barra de nav */
+/* en el celular el aviso sube para no chocar con la barra flotante */
 @media (max-width: 620px) {
-  .aviso { bottom: calc(var(--esp-6) + 56px); }
+  .aviso {
+    bottom: calc(var(--alto-nav) + var(--esp-3) + var(--esp-3) + env(safe-area-inset-bottom));
+  }
 }
 
 /* ==========================================================================
- * 11. ESTADO VACÍO
+ * 11. ESTADO VACÍO  (tarjeta con un ícono en un círculo)
  * ========================================================================*/
 .vacio {
   text-align: center;
-  color: var(--grafito);
-  padding: var(--esp-7) var(--esp-4);
-  border: 1px dashed var(--linea);
-  border-radius: var(--radio-lg);
+  color: var(--texto-2);
+  font-size: var(--txt-sm);
+  padding: var(--esp-8) var(--esp-6);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-xl);
+  box-shadow: var(--sombra-sm);
+}
+.vacio p { max-width: 38ch; margin: 0 auto; }
+
+/* el ícono, dentro de un círculo con el tono del acento */
+.vacio__icono {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--esp-4);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--acento-tenue);
+  color: var(--acento);
 }
 .vacio__titulo {
-  font-family: var(--fuente-titulo);
   font-size: var(--txt-lg);
-  color: var(--tinta);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--texto);
   margin-bottom: var(--esp-2);
 }
+.vacio__accion { margin-top: var(--esp-5); }
 
 /* ==========================================================================
- * 11b. PANTALLA DE LOGIN  (solo si está configurada la sincronización)
+ * 12. PANTALLA DE LOGIN (solo si está configurada la sincronización)
+ *     y ESQUELETOS de carga ("Sincronizando…")
  * ========================================================================*/
 .login {
-  max-width: 380px;
-  margin: var(--esp-7) auto 0;
+  max-width: 400px;
+  margin: var(--esp-6) auto 0;
   text-align: center;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-xl);
+  box-shadow: var(--sombra-md);
+  padding: var(--esp-7) var(--esp-6) var(--esp-6);
 }
+/* isotipo grande + "Faro" */
 .login__marca {
-  font-family: var(--fuente-titulo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-3);
   font-weight: 700;
   font-size: var(--txt-2xl);
-  letter-spacing: -0.02em;
-  color: var(--acento);
+  letter-spacing: -0.03em;
+  color: var(--texto);
   margin-bottom: var(--esp-3);
+}
+.login__marca .marca__iso {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radio-md);
 }
 .login__bajada {
-  color: var(--grafito);
+  color: var(--texto-2);
   font-size: var(--txt-sm);
-  margin-bottom: var(--esp-5);
+  margin: 0 auto var(--esp-6);
+  max-width: 34ch;
 }
 .login__input {
-  width: 100%;
-  padding: var(--esp-3);
   margin-bottom: var(--esp-3);
-  background: var(--papel);
-  border: 1px solid var(--linea);
-  border-radius: var(--radio-md);
-  color: var(--tinta);
-  text-align: center;
-}
-.login__input:focus {
-  outline: none;
-  border-color: var(--acento);
-  box-shadow: 0 0 0 3px var(--acento-tenue);
+  text-align: left;
 }
 .login__boton { width: 100%; }
 .login__estado {
@@ -865,37 +1163,83 @@
   margin-top: var(--esp-3);
   padding: var(--esp-3);
   border-radius: var(--radio-md);
+  text-align: left;
 }
-.login__estado--ok    { background: var(--acento-tenue); color: var(--tinta); }
-.login__estado--error { background: var(--peligro-tenue); color: var(--peligro); }
+.login__estado--ok    { background: var(--positivo-tenue); color: var(--positivo); }
+.login__estado--error { background: var(--negativo-tenue); color: var(--negativo); }
 .login__cambiar {
-  margin-top: var(--esp-4);
+  margin-top: var(--esp-3);
   font-size: var(--txt-sm);
 }
 .login__local {
-  margin-top: var(--esp-2);
+  margin-top: var(--esp-1);
   font-size: var(--txt-xs);
+  color: var(--texto-3);
 }
+/* dos enlaces seguidos ("¿Olvidaste…?" y "¿No tenés cuenta?"): menos aire */
+.login__cambiar + .login__cambiar { margin-top: 0; }
 
-/* texto "Sincronizando…" mientras se traen los datos de la nube */
+/* Esqueletos: bloques grises con un brillo que pasa, mientras se traen los
+   datos de la nube (en vez del texto "cargando"). */
 .cargando {
-  text-align: center;
-  color: var(--grafito);
-  padding: var(--esp-7) var(--esp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+}
+.esqueleto {
+  border-radius: var(--radio-lg);
+  /* base del color de los bordes (se distingue bien del fondo en los dos
+     temas) y una franja más clara que la recorre */
+  background: linear-gradient(90deg,
+    var(--borde) 0%,
+    var(--superficie-2) 50%,
+    var(--borde) 100%);
+  background-size: 200% 100%;
+  animation: brillo 1.4s linear infinite;
+}
+.esqueleto--titulo  { width: 45%; height: 28px; border-radius: var(--radio-sm); }
+.esqueleto--tarjeta { height: 180px; border-radius: var(--radio-xl); }
+.esqueleto--fila    { height: 56px; }
+
+@keyframes brillo {
+  from { background-position: 100% 0; }
+  to   { background-position: -100% 0; }
 }
 
 /* ==========================================================================
- * 12. ANIMACIÓN DE ENTRADA (sutil, al montar cada pantalla)
+ * 13. ANIMACIONES (sutiles; todas se apagan con prefers-reduced-motion,
+ *     ver el final de base.css)
  * ========================================================================*/
+
+/* entrada de pantalla: sube 6px y aparece */
 @keyframes surge {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.surge { animation: surge 0.25s ease-out both; }
+.surge { animation: surge var(--dur-3) var(--ease) both; }
+
+/* entrada escalonada de las filas (solo al abrir la pantalla): cada fila
+   arranca un poquito después de la anterior */
+.surge .gasto-item,
+.surge .proy-mes {
+  animation: surge var(--dur-3) var(--ease) both;
+}
+.surge .gasto-item:nth-child(2), .surge .proy-mes:nth-child(2) { animation-delay: 40ms; }
+.surge .gasto-item:nth-child(3), .surge .proy-mes:nth-child(3) { animation-delay: 80ms; }
+.surge .gasto-item:nth-child(4), .surge .proy-mes:nth-child(4) { animation-delay: 120ms; }
+.surge .gasto-item:nth-child(5), .surge .proy-mes:nth-child(5) { animation-delay: 160ms; }
+.surge .gasto-item:nth-child(n+6), .surge .proy-mes:nth-child(n+6) { animation-delay: 200ms; }
+
+/* destello de la fila recién agregada */
+@keyframes destello {
+  0%, 30% { background-color: var(--acento-tenue); }
+  100%    { background-color: transparent; }
+}
 
 /* ==========================================================================
- * 13. MODAL  (ventana centrada; la usa la Proyección para "ver todos los
- *     consumos" de un mes cuando son muchos). La maneja app.js.
+ * 14. MODAL  (la usa la Proyección para "ver todos los consumos" de un mes
+ *     cuando son muchos). La maneja app.js.
+ *     En compu: ventana centrada. En el celular: hoja que sube desde abajo.
  * ========================================================================*/
 .modal {
   position: fixed;
@@ -905,20 +1249,23 @@
   align-items: center;
   justify-content: center;
   padding: var(--esp-4);
-  background: rgba(20, 19, 23, 0.55);
+  background: var(--velo);
+  animation: modal-fundido var(--dur-2) var(--ease) both;
 }
 
 .modal__panel {
   width: 100%;
   max-width: 460px;
   max-height: 82vh;
+  max-height: 82dvh;
   display: flex;
   flex-direction: column;
-  background: var(--papel);
-  border: 1px solid var(--papel-3);
-  border-radius: var(--radio-lg);
-  box-shadow: var(--sombra);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-xl);
+  box-shadow: var(--sombra-lg);
   overflow: hidden;
+  animation: modal-sube var(--dur-3) var(--ease) both;
 }
 
 .modal__cabeza {
@@ -926,55 +1273,93 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--esp-3);
-  padding: var(--esp-4) var(--esp-5);
-  border-bottom: 1px solid var(--linea);
+  padding: var(--esp-3) var(--esp-3) var(--esp-3) var(--esp-6);
+  border-bottom: 1px solid var(--borde);
 }
 .modal__titulo {
-  font-size: var(--txt-md);
-  font-weight: 700;
+  font-size: var(--txt-base);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
-.modal__cerrar {
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  color: var(--grafito);
-  font-size: 14px;
-}
-.modal__cerrar:hover { background: var(--papel-2); color: var(--tinta); }
+/* la X de cerrar usa .boton-icono (40x40); acá solo el color de base */
+.modal__cerrar { color: var(--texto-2); }
 
 .modal__cuerpo {
-  padding: var(--esp-3) var(--esp-5) var(--esp-5);
+  padding: var(--esp-2) var(--esp-6) var(--esp-6);
   overflow-y: auto;
+  overscroll-behavior: contain;  /* que el scroll no "pase" a la página de atrás */
+}
+
+@keyframes modal-fundido {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes modal-sube {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* En el celular: hoja inferior (pegada abajo, redondeada solo arriba) */
+@media (max-width: 620px) {
+  .modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal__panel {
+    max-width: none;
+    max-height: 88vh;
+    max-height: 88dvh;
+    border-bottom: none;
+    border-radius: var(--radio-xl) var(--radio-xl) 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  @keyframes modal-sube {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
 }
 
 /* ==========================================================================
- * 14. AJUSTES RESPONSIVE PARA CELULAR
+ * 15. AJUSTES RESPONSIVE PARA CELULAR
  * Acá se apila lo que en pantalla ancha va en dos columnas, para que nada se
  * salga de la pantalla. El breakpoint (480px) cubre todos los celulares.
  * ========================================================================*/
 @media (max-width: 480px) {
   /* menos padding en las tarjetas, para ganar ancho */
-  .tarjeta { padding: var(--esp-4); }
-  .ahora   { padding: var(--esp-4); }
+  .tarjeta,
+  .ahora,
+  .config-bloque { padding: var(--esp-5); }
 
   /* alta rápida: "qué compraste" y "monto" uno abajo del otro */
-  .alta__principal { flex-direction: column; }
+  .alta__principal { flex-direction: column; gap: 0; }
+  .alta__descripcion,
   .alta__monto { width: 100%; }
   .alta__monto input { text-align: left; }
 
   /* campos que van de a dos (fecha + moneda) -> apilados */
   .campo-fila { flex-direction: column; gap: 0; }
 
-  /* pie del formulario: "más" arriba a la izquierda, botones a lo ancho abajo */
-  .alta__pie { flex-wrap: wrap; gap: var(--esp-3); }
-  .alta__pie > div { width: 100%; }
-  .alta__pie > div .boton { flex: 1; }
+  /* pie del formulario: "Más opciones" arriba, botones a lo ancho abajo */
+  .alta__pie { flex-wrap: wrap; }
+  .alta__pie .acciones { width: 100%; }
+  .alta__pie .acciones .boton { flex: 1; }
 
-  /* filas del registro: que el monto no imponga un ancho fijo grande */
-  .gasto-item { gap: var(--esp-2); }
-  .gasto-item__monto { min-width: 0; }
-  .gasto-item__acciones .boton--mini { padding: 4px 6px; }
+  /* filas del registro: avatar | texto | monto, y los botones debajo del
+     monto (así el texto no queda apretado entre tantos elementos) */
+  .gasto-item {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "avatar cuerpo monto"
+      "avatar cuerpo acciones";
+    column-gap: var(--esp-3);
+    row-gap: 0;
+    align-items: center;
+  }
+  .gasto-item__avatar   { grid-area: avatar; align-self: start; margin-top: 2px; }
+  .gasto-item__cuerpo   { grid-area: cuerpo; }
+  .gasto-item__monto    { grid-area: monto; align-self: end; }
+  .gasto-item__acciones { grid-area: acciones; justify-self: end; margin-bottom: calc(-1 * var(--esp-2)); }
 
   /* la deuda total: dejar que envuelva si no entra en una línea */
   .proy-deuda { flex-wrap: wrap; }
@@ -982,11 +1367,16 @@
      siempre quedan visibles en la misma línea */
   .proy-linea__medio { display: none; }
 
-  /* formularios de Ajustes (medio con color, etc.) */
+  /* formularios de Ajustes (medio con color, etc.): el input crece, el
+     color y el botón quedan al lado o abajo si no entran */
   .config-bloque form.campo-fila { flex-flow: row wrap; gap: var(--esp-3); }
+  .config-bloque form.campo-fila .campo:not(.campo--color) { flex: 1 1 100%; }
+  .config-bloque form.campo-fila .boton { flex: 1; }
+
+  /* login: menos margen interno */
+  .login { padding: var(--esp-6) var(--esp-5) var(--esp-5); }
 
   /* modal con menos margen interno */
-  .modal { padding: var(--esp-3); }
-  .modal__cabeza,
-  .modal__cuerpo { padding-left: var(--esp-4); padding-right: var(--esp-4); }
+  .modal__cabeza { padding-left: var(--esp-5); }
+  .modal__cuerpo { padding-left: var(--esp-5); padding-right: var(--esp-5); }
 }

@@ -4,7 +4,8 @@
  * La ESTRUCTURA de la página (dónde va cada bloque grande), sin entrar en el
  * detalle de los componentes:
  *   - .app          -> el contenedor de todo
- *   - .cabecera     -> marca + navegación (arriba en compu, abajo en celular)
+ *   - .cabecera     -> marca + navegación (arriba en compu; en el celular la
+ *                      navegación flota abajo)
  *   - .contenido    -> la columna central donde se dibuja la pantalla activa
  *   - responsive    -> los ajustes para pantallas chicas
  * ==========================================================================*/
@@ -18,16 +19,29 @@
 
 /* ==========================================================================
  * CABECERA (marca + navegación)
- * En compu: barra horizontal arriba, pegada (sticky) al hacer scroll.
+ * Pegada arriba (sticky) al hacer scroll, con fondo translúcido y desenfoque.
  * ========================================================================*/
 .cabecera {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--papel); /* respaldo por si el navegador no soporta color-mix */
-  background: color-mix(in srgb, var(--papel) 88%, transparent);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--linea);
+  border-bottom: 1px solid var(--borde);
+}
+
+/* El fondo translúcido + desenfoque va en una "capa" aparte (::before) y NO
+   en .cabecera misma. Motivo: un elemento con backdrop-filter se vuelve el
+   "marco de referencia" de sus hijos con position: fixed, y en el celular la
+   barra de navegación (que vive adentro de la cabecera) quedaría pegada a la
+   cabecera en vez de flotar abajo de la pantalla. */
+.cabecera::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--fondo); /* respaldo por si el navegador no soporta color-mix */
+  background: color-mix(in srgb, var(--fondo) 85%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 .cabecera__interior {
@@ -40,24 +54,42 @@
   gap: var(--esp-4);
 }
 
-/* "Faro" en la fuente de títulos + "Control de gastos" chiquito al lado. */
+/* isotipo + "Faro" + "Control de gastos" chiquito al lado */
 .cabecera__marca {
-  font-family: var(--fuente-titulo);
   font-weight: 700;
   font-size: var(--txt-lg);
   letter-spacing: -0.02em;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--esp-2);
+  white-space: nowrap;
 }
 
 .cabecera__sub {
-  font-family: var(--fuente-texto);
   font-weight: 500;
-  font-size: var(--txt-xs);
-  letter-spacing: 0.02em;
-  color: var(--grafito);
-  text-transform: uppercase;
+  font-size: var(--txt-sm);
+  letter-spacing: 0;
+  color: var(--texto-2);
+}
+
+/* El isotipo de la marca: cuadrado redondeado índigo con un "punto de luz"
+   (la luz del faro). Se usa en la cabecera y en la pantalla de login. */
+.marca__iso {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: var(--radio-sm);
+  background: linear-gradient(135deg, var(--acento), #7C74F0);
+  display: grid;
+  place-items: center;
+}
+.marca__iso::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #FFE9A8;
+  box-shadow: 0 0 8px 2px #FFD466;  /* el resplandor de la luz */
 }
 
 /* zona derecha: navegación + botón de tema */
@@ -68,25 +100,28 @@
 }
 
 /* mientras se pide iniciar sesión, no mostramos la navegación */
-body.sin-sesion .cabecera__acciones { display: none; }
+body.sin-sesion .nav { display: none; }
 
-/* botón rápido de tema (el sol / luna de la cabecera) */
+/* botón rápido de tema (sol / luna de la cabecera), 40x40 */
 .tema-toggle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  font-size: 15px;
-  line-height: 1;
-  color: var(--grafito);
-  border: 1px solid var(--linea);
-  background: var(--papel-2);
-  transition: color 0.15s, background-color 0.15s;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--texto-2);
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  box-shadow: var(--sombra-sm);
+  transition: color var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease),
+    transform var(--dur-1) var(--ease);
 }
-.tema-toggle:hover { color: var(--tinta); background: var(--papel-3); }
+.tema-toggle:hover { color: var(--texto); background: var(--superficie-2); }
+.tema-toggle:active { transform: scale(.94); }
 
 /* ==========================================================================
- * NAVEGACIÓN
+ * NAVEGACIÓN (en compu: pestañas de texto dentro de la cabecera)
  * ========================================================================*/
 .nav {
   display: flex;
@@ -94,25 +129,29 @@ body.sin-sesion .cabecera__acciones { display: none; }
 }
 
 .nav__item {
-  font-family: var(--fuente-texto);
   font-size: var(--txt-sm);
   font-weight: 500;
-  color: var(--grafito);
+  color: var(--texto-2);
   padding: var(--esp-2) var(--esp-3);
   border-radius: var(--radio-sm);
-  transition: color 0.15s, background-color 0.15s;
+  transition: color var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease);
 }
 
 .nav__item:hover {
-  color: var(--tinta);
-  background: var(--papel-2);
+  color: var(--texto);
+  background: var(--superficie-2);
 }
 
 /* pestaña activa */
-.nav__item--activo {
+.nav__item--activo,
+.nav__item--activo:hover {
   color: var(--acento);
   background: var(--acento-tenue);
+  font-weight: 600;
 }
+
+/* en la compu no mostramos los íconos (solo en el celular) */
+.nav__icono { display: none; }
 
 /* ==========================================================================
  * CONTENIDO (la columna central)
@@ -121,83 +160,101 @@ body.sin-sesion .cabecera__acciones { display: none; }
   flex: 1;
   width: 100%;
   max-width: var(--ancho-columna);
-  margin: 0 auto;              /* <- esto centra la columna: el bug que tenía la app vieja */
-  padding: var(--esp-6) var(--esp-4) var(--esp-7);
+  margin: 0 auto;              /* <- esto centra la columna */
+  padding: var(--esp-7) var(--esp-4) var(--esp-8);
 }
 
 /* Cada "pantalla" (Gastos, Proyección, Ajustes) se monta dentro de .contenido.
-   Este bloque le da el aire de arriba a su encabezado. */
+   Título grande + bajada gris. */
 .pantalla__titulo {
   font-size: var(--txt-xl);
+  font-weight: 700;
+  letter-spacing: -0.025em;
   margin-bottom: var(--esp-2);
 }
 
 .pantalla__bajada {
-  color: var(--grafito);
+  color: var(--texto-2);
   font-size: var(--txt-sm);
-  margin-bottom: var(--esp-5);
+  margin-bottom: var(--esp-6);
   max-width: 46ch;
 }
 
 /* ==========================================================================
  * RESPONSIVE — pantallas chicas (celular)
- * La navegación pasa a ser una barra fija ABAJO, al alcance del pulgar,
- * como en una app nativa. Es la forma en la que va a vivir cuando la
- * llevemos al celular.
+ * La navegación pasa a ser una barra FLOTANTE abajo, separada de los bordes,
+ * al alcance del pulgar, con ícono arriba y texto abajo (como una app nativa).
  * ========================================================================*/
 @media (max-width: 620px) {
-  .cabecera {
-    position: static;
-    background: var(--papel);
-    backdrop-filter: none;
-  }
-
   .cabecera__interior {
-    padding: var(--esp-4) var(--esp-4) var(--esp-3);
+    padding: var(--esp-3) var(--esp-4);
   }
 
-  /* saco la nav de la cabecera y la fijo abajo */
+  /* saco la nav de la cabecera y la hago flotar abajo */
   .nav {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    left: var(--esp-3);
+    right: var(--esp-3);
+    bottom: calc(var(--esp-3) + env(safe-area-inset-bottom));
     z-index: 20;
-    background: var(--papel); /* respaldo si no hay color-mix */
-    background: color-mix(in srgb, var(--papel) 94%, transparent);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid var(--linea);
-    padding: var(--esp-2) var(--esp-2) max(var(--esp-2), env(safe-area-inset-bottom));
-    justify-content: space-around;
+    height: var(--alto-nav);
+    padding: 0 var(--esp-1);
     gap: 0;
+    background: var(--superficie); /* respaldo si no hay color-mix */
+    background: color-mix(in srgb, var(--superficie) 88%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-xl);
+    box-shadow: var(--sombra-lg);
   }
 
-  .nav__item {
+  /* cada ítem: ícono arriba, texto de 11px abajo */
+  .nav__item,
+  .nav__item:hover,
+  .nav__item--activo,
+  .nav__item--activo:hover {
     flex: 1;
-    text-align: center;
-    padding: var(--esp-3) var(--esp-2);
-    border-radius: var(--radio-sm);
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 0;
+    background: transparent;
+    border-radius: var(--radio-lg);
+    font-size: var(--txt-2xs);
+    font-weight: 600;
+  }
+  .nav__item { color: var(--texto-3); }
+  .nav__item--activo { color: var(--acento); }
+
+  /* la "píldora" detrás del ícono (solo se pinta en el activo) */
+  .nav__icono {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 28px;
+    border-radius: var(--radio-full);
+    transition: background-color var(--dur-2) var(--ease);
+  }
+  .nav__item--activo .nav__icono { background: var(--acento-tenue); }
+
+  .nav__texto {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  /* dejo aire al final para que la barra fija no tape el último contenido */
+  /* dejo aire al final para que la barra flotante no tape el último contenido:
+     alto de la barra + su separación del borde + un respiro */
   .contenido {
-    padding: var(--esp-5) var(--esp-4) calc(var(--esp-7) + 56px);
+    padding: var(--esp-6) var(--esp-4)
+      calc(var(--alto-nav) + var(--esp-3) + var(--esp-7) + env(safe-area-inset-bottom));
   }
 
-  .pantalla__titulo { font-size: var(--txt-lg); }
-}
-
-/* Celulares angostos: apretamos un poco más para que nada se corte. */
-@media (max-width: 380px) {
-  .cabecera__sub { display: none; }          /* dejamos solo "Faro" */
-
-  .nav__item {
-    font-size: var(--txt-xs);
-    padding: var(--esp-2) 2px;
-  }
-
-  .contenido {
-    padding-left: var(--esp-3);
-    padding-right: var(--esp-3);
-  }
+  /* en el login no hay nav: no hace falta reservarle lugar */
+  body.sin-sesion .contenido { padding-bottom: var(--esp-8); }
 }
